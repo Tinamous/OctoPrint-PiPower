@@ -1,0 +1,147 @@
+<div class="row-fluid">
+	<h3>Power:</h3>
+	<div class="row-fluid">
+		<div id="pipower-power-graph"></div>
+	</div>
+
+	<table class="table table-bordered table-hover">
+		<tr>
+			<td>Voltage</td>
+			<td data-bind="text:voltage.value"></td>
+			<td>Volts</td>
+		</tr>
+		<tr>
+			<td>Current</td> 
+			<td data-bind="text:current.value"></td>
+			<td>mA</td> 
+		</tr>
+		<tr>
+			<td>Power</td> 
+			<td data-bind="text:power.value"></td>
+			<td>Watts</td> 
+		</tr>
+	</table>
+</div>
+
+
+<div class="row-fluid">
+	<h3>Temperatures:</h3>
+	<div class="row-fluid">
+		<div id="pipower-temperature-graph"></div>
+	</div>
+	<table class="table table-bordered table-hover">
+		<tr>
+			<th>Probe</th>
+			<th>Temperature /&deg;C</th>
+		</tr>
+
+		<tr data-bind="if: settings.pcbTemperatureSensorId">
+			<td data-bind="text: settings.pcbTemperatureSensorCaption"></td>
+			<td data-bind="text: pcbTemperature.value"></td>
+		</tr>
+			
+		<tr data-bind="if: settings.internalTemperatureSensorId">
+			<td data-bind="text: settings.internalTemperatureSensorCaption"></td>
+			<td data-bind="text: internalTemperature.value"></td>
+		</tr>
+		<tr data-bind="if: settings.externalTemperatureSensorId">
+			<td data-bind="text: settings.externalTemperatureSensorCaption"></td>
+			<td data-bind="text: externalTemperature.value"></td>
+		</tr>
+		<tr data-bind="if: settings.extraTemperatureSensorId">
+			<td data-bind="text: settings.extraTemperatureSensorCaption"></td>
+			<td data-bind="text: extraTemperature.value"></td>
+		</tr>
+	</table>
+</div>
+
+<div class="row-fluid">
+	<h3>Fans:</h3>
+	<table class="table table-bordered table-hover">
+		<tr>
+			<th>Fan</th>
+			<th>Speed</th>
+			<th>Control</th>
+			<th>Speed</th>
+		<tr>
+		<tr data-bind="with: fan0">
+			<td data-bind="text: caption"></td>
+			<td data-bind="text: speed" style="width:10%"></td>
+			<td>
+				<button class="btn btn-block control-box" data-bind="click: on">On</button>
+				<button class="btn btn-block control-box" data-bind="click: off">Off</button>
+			</td>
+			<td style="width:30%">
+				<select class="btn btn-block control-box" data-bind="options: speedOptions, value: selectedSpeedOption"></select>
+				<button class="btn btn-block control-box" data-bind="click: setSpeed">Set</button>
+			</td>
+		</tr>
+		<tr data-bind="with: fan1">
+			<td data-bind="text: caption"></td>
+			<td data-bind="text: speed" style="width:10%"></td>
+			<td>
+				<button class="btn btn-block control-box" data-bind="click: on">On</button>
+				<button class="btn btn-block control-box" data-bind="click: off">Off</button>
+			</td>
+			<td style="width:30%">
+				<select class="btn btn-block control-box" data-bind="options: speedOptions, value: selectedSpeedOption"></select>
+				<button class="btn btn-block control-box" data-bind="click: setSpeed">Set</button>
+			</td>
+		</tr>
+	</table>
+</div>
+
+
+<div class="row-fluid">
+	<h3>Light:</h3>
+	<table class="table table-bordered table-hover">
+		<tr>
+			<td data-bind="text: settings.lightSensorCaption"></td>
+			<td data-bind="text:lightLevel.value"></td>
+			<td></td>
+		</tr>	
+		<tr data-bind="with:leds">
+			<td data-bind="text: caption"></td>
+			<td data-bind="text: value"></td>
+			<td  style="width:30%">
+				<select class="btn btn-block control-box" data-bind="options: ledModes, value: selectedLedMode"></select>
+				<button class="btn btn-block control-box" data-bind="click: setMode">Set Mode</button>
+			</td>
+		</tr>
+		<tr>
+			<td>Display Backlight</td>
+			<td>On</td>
+			<td>
+				<button class="btn btn-block control-box">On</button>
+				<button class="btn btn-block control-box">Off</button>
+			</td>
+		</tr>
+	</table>
+</div>
+
+<div class="row-fluid">
+	<h3>GPIO:</h3>
+	<table class="table table-bordered table-hover">
+		<tr>
+			<th>Pin</th>
+			<th>Value</th>
+			<th>Control</th>
+		<tr>
+		<tr data-bind="with: gpioPin16">
+			<td data-bind="text: caption"></td>
+			<td data-bind="text: value" style="width:10%"></td>
+			<td>
+				<button class="btn btn-block control-box" data-bind="click: setLow">LOW</button>
+				<button class="btn btn-block control-box" data-bind="click: setHigh">HIGH</button>
+			</td>
+		</tr>
+		<tr data-bind="with: gpioPin26">
+			<td data-bind="text: caption"></td>
+			<td data-bind="text: value" style="width:10%"></td>
+			<td>
+				<button class="btn btn-block control-box" data-bind="click: setLow">LOW</button>
+				<button class="btn btn-block control-box" data-bind="click: setHigh">HIGH</button>
+			</td>
+		</tr>
+	</table>
+</div>
