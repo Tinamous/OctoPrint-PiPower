@@ -113,12 +113,12 @@ class PipowerPlugin(octoprint.plugin.StartupPlugin,
 
 				# version check: github repository
 				type="github_release",
-				user="BookSwapSteve",
+				user="Tinamous",
 				repo="OctoPrint-PiPower",
 				current=self._plugin_version,
 
 				# update method: pip
-				pip="https://github.com/BookSwapSteve/OctoPrint-PiPower/archive/{target_version}.zip"
+				pip="https://github.com/Tinamous/OctoPrint-PiPower/archive/{target_version}.zip"
 			)
 		)
 

@@ -10,9 +10,9 @@ license: CC-SA 4.0
 # TODO
 date: 2017-03-05
 
-homepage: https://github.com/BookSwapSteve/OctoPrint-PiPower
-source: https://github.com/BookSwapSteve/OctoPrint-PiPower
-archive: https://github.com/BookSwapSteve/OctoPrint-PiPower/archive/master.zip
+homepage: https://github.com/Tinamous/OctoPrint-PiPower
+source: https://github.com/Tinamous/OctoPrint-PiPower
+archive: https://github.com/Tinamous/OctoPrint-PiPower/archive/master.zip
 
 # TODO set this to true if your plugin uses the dependency_links setup parameter to include
 # library versions not yet published on PyPi. SHOULD ONLY BE USED IF THERE IS NO OTHER OPTION!
