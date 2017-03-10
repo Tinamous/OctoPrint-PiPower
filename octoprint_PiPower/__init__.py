@@ -16,10 +16,144 @@ import time
 
 import logging
 import logging.handlers
-import RPi.GPIO as GPIO 
 
 os.system('modprobe w1-gpio')
 os.system('modprobe w1-therm')
+
+# Mocked hardware for development
+class MockPiPowerHat:
+	def __init__(self):
+		self._logger = logging.getLogger(__name__)
+
+	def initialize(self):
+		self._logger.setLevel(logging.DEBUG)
+		self._logger.warn("MockPiPowerHat. GPIO not initialized")
+
+	def getPiPowerValues(self, settings):
+		self._logger.debug("Making up values for debug")
+		
+		settingsKey = "pcbTemperatureSensorId";
+		sensor = settings.get([settingsKey])
+		self._logger.warn(settingsKey + " == " + sensor)
+
+		import random
+		def randrange_float(start, stop, step):
+			return random.randint(0, int((stop - start) / step)) * step + start
+
+		# make some values up.
+		voltage = randrange_float(11, 13, 0.01)
+		currentMilliAmps = randrange_float(600, 1500, 0.1)
+
+		return dict(
+			externalTemperature= randrange_float(30, 60, 0.1), 
+			internalTemperature= randrange_float(30, 60, 0.1),
+			pcbTemperature = randrange_float(30, 60, 0.1),
+			extraTemperature = None,
+			voltage = round(voltage,1),
+			currentMilliAmps = round(currentMilliAmps,1),
+			powerWatts = round(voltage * (currentMilliAmps/1000),0),
+			lightLevel = randrange_float(0, 100, 1),
+			fan0Speed = randrange_float(0, 100, 1),
+			fan1Speed = randrange_float(0, 100, 1),
+			leds = "on",
+			gpioPin16Value = "HIGH",
+			gpioPin26Value = "LOW"
+			)
+
+
+
+# Real hardware
+class PiPowerHat:
+	def __init__(self):
+		self._logger = logging.getLogger(__name__)
+
+	def initialize(self):
+		self._logger.warn("PiPowerHat. GPIO initializing")
+		self._logger.setLevel(logging.DEBUG)
+		import RPi.GPIO as GPIO 
+
+		self._logger.info("Running RPi.GPIO version '{0}'...".format(GPIO.VERSION))
+
+		if GPIO.VERSION < "0.6":
+			raise Exception("RPi.GPIO must be greater than 0.6")
+			
+		GPIO.setmode(GPIO.BCM)
+		GPIO.setwarnings(False)
+
+		self._logger.warn("PiPowerHat. GPIO initialized")
+
+	def getPiPowerValues(self, settings):
+		self._logger.warn("Getting values from PiPower PCB")
+		
+		pcbTemperature = self.read_temperature_for_setting(settings, "pcbTemperatureSensorId")
+		internalTemperature = self.read_temperature_for_setting(settings, "internalTemperatureSensorId")
+		externalTemperature = self.read_temperature_for_setting(settings, "externalTemperatureSensorId")
+		extraTemperature = self.read_temperature_for_setting(settings, "extraTemperatureSensorId")
+
+		# make some values up.
+		# extraTemperature = null
+		voltage = 24.3
+		currentMilliAmps = 23.3
+		# V1.2 PCB only
+		lightLevel = 128
+		fan0Speed = 12
+		fan1Speed = 23
+		gpioPin16Value = "LOW"
+		gpioPin26Value = "HIGH"
+		leds = "off"
+
+		return dict(
+			externalTemperature= externalTemperature, 
+			internalTemperature= internalTemperature,
+			pcbTemperature = pcbTemperature,
+			extraTemperature = extraTemperature,
+			voltage = round(voltage,1),
+			currentMilliAmps = round(currentMilliAmps,1),
+			powerWatts = round(voltage * (currentMilliAmps/1000),0),
+			lightLevel = lightLevel,
+			fan0Speed = fan0Speed,
+			fan1Speed = fan1Speed,
+			leds = leds,
+			gpioPin16Value = gpioPin16Value,
+			gpioPin26Value = gpioPin26Value
+			)
+		
+	# Pass in the key for the settings we want the temperature for
+	# and read the temperature if the sensor is defined.
+	def read_temperature_for_setting(settings, settingsKey):
+		sensor = settings.get([settingsKey])
+
+		if sensor:
+			self._logger.info("Reading sensor: " + sensor)
+			return self.read_temp(sensor)
+		else:
+			self._logger.warn("No sensor for setting: " + settingsKey)
+			return None;
+
+	# Read the temperature from the sensor.
+	def read_temp(sensor):
+
+		lines = temp_raw(sensor)
+		while lines[0].strip()[-3:] != 'YES':
+			time.sleep(0.2)
+			lines = temp_raw(sensor)
+
+		temp_output = lines[1].find('t=')
+
+		if temp_output != -1:
+			temp_string = lines[1].strip()[temp_output+2:]
+			temp_c = float(temp_string) / 1000.0
+			self._logger.info("Read temperature of : " + temp_c)
+			return round(temp_c,1)
+
+	# Read temperature raw output from sensor	
+	def temp_raw(sensor):
+
+		sensorPath = "/sys/bus/w1/devices/{}/w1_slave".format(sensor[1])
+		f = open(sensorPath, 'r')
+		lines = f.readlines()
+		f.close()
+		return lines
 
 # TODO: Include events so that the fans can be switched on
 # when a print is finished.
@@ -40,16 +174,13 @@ class PipowerPlugin(octoprint.plugin.StartupPlugin,
 		self._logger.setLevel(logging.DEBUG)
 		
 		if sys.platform == "linux2":
-			self._logger.info("Running RPi.GPIO version '{0}'...".format(GPIO.VERSION))
-			
-			if GPIO.VERSION < "0.6":
-				raise Exception("RPi.GPIO must be greater than 0.6")
-			
-			GPIO.setmode(GPIO.BCM)
-			GPIO.setwarnings(False)
+			self._powerHat = PiPowerHat();		
 		else:
-			self._logger.warn("Not running on a Raspberry Pi, GPIO not initialized")
+			self._powerHat = PiPowerHat();		
+			#self._powerHat = MockPiPowerHat();
+
 		
+		self._powerHat.initialize();
 		self._logger.info("Pi Power Plugin [%s] initialized..."%self._identifier)
 
 	##~~ SettingsPlugin mixin
@@ -151,103 +282,12 @@ class PipowerPlugin(octoprint.plugin.StartupPlugin,
 	def getPiPowerValues(self):
 		self._logger.info("Getting values from PiPower...")
 
-		if sys.platform == "linux2":
-			self._logger.warn("Getting values from PiPower PCB")
-			pcbTemperature = self.read_temperature_for_setting("pcbTemperatureSensorId")
-			internalTemperature = self.read_temperature_for_setting("internalTemperatureSensorId")
-			externalTemperature = self.read_temperature_for_setting("externalTemperatureSensorId")
-			extraTemperature = self.read_temperature_for_setting("extraTemperatureSensorId")
+		pluginData = self._powerHat.getPiPowerValues(self._settings)
 
-			# make some values up.
-			# extraTemperature = null
-			voltage = 24.3
-			currentMilliAmps = 23.3
-			# V1.2 PCB only
-			lightLevel = 128
-			fan0Speed = 12
-			fan1Speed = 23
-			gpioPin16Value = "LOW"
-			gpioPin26Value = "HIGH"
-			leds = "off"
-		else:
-			self._logger.debug("Making up values for debug")
-			import random
-			def randrange_float(start, stop, step):
-				return random.randint(0, int((stop - start) / step)) * step + start
-
-			# make some values up.
-			extraTemperature = None
-			externalTemperature = randrange_float(30, 60, 0.1)
-			internalTemperature = randrange_float(30, 60, 0.1)
-			pcbTemperature = randrange_float(30, 60, 0.1)
-			voltage = randrange_float(11, 13, 0.01)
-			currentMilliAmps = randrange_float(600, 1500, 0.1)
-			lightLevel = randrange_float(0, 100, 1)
-			fan0Speed = randrange_float(0, 100, 1)
-			fan1Speed = randrange_float(0, 100, 1)
-			gpioPin16Value = "HIGH"
-			gpioPin26Value = "LOW"
-			leds = "on"           
-
-		self._logger.info("Publishing values")
-		pluginData = dict(
-			externalTemperature= externalTemperature, 
-			internalTemperature= internalTemperature,
-			pcbTemperature = pcbTemperature,
-			extraTemperature = extraTemperature,
-			voltage = round(voltage,1),
-			currentMilliAmps = round(currentMilliAmps,1),
-			powerWatts = round(voltage * (currentMilliAmps/1000),0),
-			lightLevel = lightLevel,
-			fan0Speed = fan0Speed,
-			fan1Speed = fan1Speed,
-			leds = leds,
-			gpioPin16Value = gpioPin16Value,
-			gpioPin26Value = gpioPin26Value
-			)
-
+		self._logger.info("Publishing PiPower values")
 		self._plugin_manager.send_plugin_message(self._identifier, pluginData)
 
 		return pluginData;
-
-	# Pass in the key for the settings we want the temperature for
-	# and read the temperature if the sensor is defined.
-	def read_temperature_for_setting(settingsKey):
-		sensor = self._settings.get([settingsKey])
-
-		if sensor:
-			self._logger.info("Reading sensor: " + sensor)
-			return self.read_temp(sensor)
-		else:
-			self._logger.warn("No sensor for setting: " + settingsKey)
-			return None;
-
-	# Read the temperature from the sensor.
-	def read_temp(sensor):
-
-		lines = temp_raw(sensor)
-		while lines[0].strip()[-3:] != 'YES':
-			time.sleep(0.2)
-			lines = temp_raw(sensor)
-
-		temp_output = lines[1].find('t=')
-
-		if temp_output != -1:
-			temp_string = lines[1].strip()[temp_output+2:]
-			temp_c = float(temp_string) / 1000.0
-			self._logger.info("Read temperature of : " + temp_c)
-			return round(temp_c,1)
-
-	# Read temperature raw output from sensor	
-	def temp_raw(sensor):
-
-		sensorPath = "/sys/bus/w1/devices/{}/w1_slave".format(sensor[1])
-		f = open(sensorPath, 'r')
-		lines = f.readlines()
-		f.close()
-		return lines
-
-
 
 # If you want your plugin to be registered within OctoPrint under a different name than what you defined in setup.py
 # ("OctoPrint-PluginSkeleton"), you may define that here. Same goes for the other metadata derived from setup.py that
