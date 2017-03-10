@@ -16,7 +16,7 @@ import time
 
 import logging
 import logging.handlers
-#import RPi.GPIO as GPIO 
+import RPi.GPIO as GPIO 
 
 os.system('modprobe w1-gpio')
 os.system('modprobe w1-therm')
