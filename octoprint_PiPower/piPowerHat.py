@@ -43,7 +43,10 @@ class PiPowerHat:
 	def getPiPowerValues(self, settings):
 		self._logger.warn("Getting values from PiPower PCB")
 		
-		pcbTemperature = self.read_temperature_for_setting(settings, "pcbTemperatureSensorId")
+		pcbTemperature = self.read_temp(settings.get(["pcbTemperatureSensorId"]))
+		self._logger.warn("Got PCB Temperature")
+
+		#pcbTemperature = self.read_temperature_for_setting(settings, "pcbTemperatureSensorId")
 		internalTemperature = self.read_temperature_for_setting(settings, "internalTemperatureSensorId")
 		externalTemperature = self.read_temperature_for_setting(settings, "externalTemperatureSensorId")
 		extraTemperature = self.read_temperature_for_setting(settings, "extraTemperatureSensorId")
@@ -95,7 +98,7 @@ class PiPowerHat:
 				return None;
 		except:
 			self._logger.warn("Exception in read_temperature_for_settings.")
-			pass
+			raise
 
 	# Read the temperature from the sensor.
 	def read_temp(sensor):

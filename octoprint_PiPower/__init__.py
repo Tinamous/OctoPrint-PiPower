@@ -65,6 +65,7 @@ class PipowerPlugin(octoprint.plugin.StartupPlugin,
 			ledsCaption = "LEDs",
 			gpioPin16Caption = "GPIO Pin 16",
 			gpioPin26Caption = "GPIO Pin 26",
+			temperatureSensors = ['','28-000007538f5b','28-0000070e4078']
 			)
 
 	def get_template_configs(self):

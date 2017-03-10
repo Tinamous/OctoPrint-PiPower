@@ -1,8 +1,88 @@
 <form class="form-horizontal">
+
     <div class="control-group">
-        <label class="control-label">{{ _('Voltage Caption') }}</label>
+        <label class="control-label">{{ _('PCB Temperature Sensor') }}</label>
         <div class="controls">
-            <input type="text" class="input-block-level" data-bind="value: settings.plugins.pipower.voltageCaption">
+		<div class="input-append">
+			<select data-bind="options: settings.plugins.pipower.temperatureSensors, value: settings.plugins.pipower.pcbTemperatureSensorId" >
+			</select>
+			<input type="text" class="input-block-level input-mini" data-bind="value: settings.plugins.pipower.pcbTemperatureSensorCaption">
+		</div>
+        </div>
+    </div>
+
+    <div class="control-group">
+        <label class="control-label">{{ _('Internal Sensor') }}</label>
+        <div class="controls">
+		<div class="input-append">
+			<input type="text" class="input-block-level" data-bind="value: settings.plugins.pipower.internalTemperatureSensorCaption">
+			<select data-bind="options: settings.plugins.pipower.temperatureSensors, value: settings.plugins.pipower.internalTemperatureSensorId" >
+			</select>
+		</div>
+        </div>
+    </div>
+
+    <div class="control-group">
+        <label class="control-label">{{ _('External Sensor') }}</label>
+        <div class="controls">
+		<div class="input-append">
+			<input type="text" class="input-block-level" data-bind="value: settings.plugins.pipower.externalTemperatureSensorCaption">
+			<select data-bind="options: settings.plugins.pipower.temperatureSensors, value: settings.plugins.pipower.externalTemperatureSensorId" >
+			</select>
+		</div>
+        </div>
+    </div>
+
+    <div class="control-group">
+        <label class="control-label">{{ _('Additional Sensor') }}</label>
+        <div class="controls">
+		<div class="input-append">
+			<input type="text" class="input-block-level" data-bind="value: settings.plugins.pipower.extraTemperatureSensorCaption">
+			<select data-bind="options: settings.plugins.pipower.temperatureSensors, value: settings.plugins.pipower.extraTemperatureSensorId" >
+			</select>
+		</div>
+        </div>
+    </div>
+
+    <div class="control-group">
+        <label class="control-label">{{ _('fan0Caption') }}</label>
+        <div class="controls">
+            <input type="text" class="input-block-level" data-bind="value: settings.plugins.pipower.fan0Caption">
+        </div>
+    </div>
+
+    <div class="control-group">
+        <label class="control-label">{{ _('fan1Caption') }}</label>
+        <div class="controls">
+            <input type="text" class="input-block-level" data-bind="value: settings.plugins.pipower.fan1Caption">
+        </div>
+    </div>
+
+    <div class="control-group">
+        <label class="control-label">{{ _('lightSensorCaption') }}</label>
+        <div class="controls">
+            <input type="text" class="input-block-level" data-bind="value: settings.plugins.pipower.lightSensorCaption">
+        </div>
+    </div>
+
+    <div class="control-group">
+        <label class="control-label">{{ _('ledsCaption') }}</label>
+        <div class="controls">
+            <input type="text" class="input-block-level" data-bind="value: settings.plugins.pipower.ledsCaption">
+        </div>
+    </div>
+    
+    <div class="control-group">
+        <label class="control-label">{{ _('gpioPin16Caption') }}</label>
+        <div class="controls">
+            <input type="text" class="input-block-level" data-bind="value: settings.plugins.pipower.gpioPin16Caption">
+        </div>
+    </div>
+
+    <div class="control-group">
+        <label class="control-label">{{ _('gpioPin26Caption') }}</label>
+        <div class="controls">
+            <input type="text" class="input-block-level" data-bind="value: settings.plugins.pipower.gpioPin26Caption">
         </div>
     </div>
 </form>
