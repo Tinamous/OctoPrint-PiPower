@@ -5,14 +5,6 @@ __author__ = "Stephen Harrison <Stephen.Harrison@AnalysisUK.com>"
 __license__ = 'Creative Commons Share Alike 4.0'
 __copyright__ = "Copyright (C) 2017 Analysis UK Ltd - Released under terms of the CC-SA-4.0 License"
 
-### (Don't forget to remove me)
-# This is a basic skeleton for your plugin's __init__.py. You probably want to adjust the class name of your plugin
-# as well as the plugin mixins it's subclassing from. This is really just a basic skeleton to get you started,
-# defining your plugin as a template plugin, settings and asset plugin. Feel free to add or remove mixins
-# as necessary.
-#
-# Take a look at the documentation on what other plugin mixins are available.
-
 import octoprint.plugin
 from octoprint.util import RepeatedTimer
 
@@ -38,9 +30,6 @@ class PipowerPlugin(octoprint.plugin.StartupPlugin,
 					octoprint.plugin.SimpleApiPlugin):
 
 	def __init__(self):
-		#self.isRaspi = False
-        #self.debugMode = False      # to simulate temp on Win/Mac
-        #self.displayRaspiTemp = True
 		self._readPiPowerValuesTimer = None
 
 	def on_after_startup(self):
@@ -50,12 +39,16 @@ class PipowerPlugin(octoprint.plugin.StartupPlugin,
 	def initialize(self):
 		self._logger.setLevel(logging.DEBUG)
 		
-		#self._logger.info("Running RPi.GPIO version '{0}'...".format(GPIO.VERSION))
-		#if GPIO.VERSION < "0.6":
-		#	raise Exception("RPi.GPIO must be greater than 0.6")
+		if sys.platform == "linux2":
+			self._logger.info("Running RPi.GPIO version '{0}'...".format(GPIO.VERSION))
 			
-		#GPIO.setmode(GPIO.BCM)
-		#GPIO.setwarnings(False)
+			if GPIO.VERSION < "0.6":
+				raise Exception("RPi.GPIO must be greater than 0.6")
+			
+			GPIO.setmode(GPIO.BCM)
+			GPIO.setwarnings(False)
+		else:
+			self._logger.warn("Not running on a Raspberry Pi, GPIO not initialized")
 		
 		self._logger.info("Pi Power Plugin [%s] initialized..."%self._identifier)
 
@@ -77,11 +70,6 @@ class PipowerPlugin(octoprint.plugin.StartupPlugin,
 			ledsCaption = "LEDs",
 			gpioPin16Caption = "GPIO Pin 16",
 			gpioPin26Caption = "GPIO Pin 26",
-
-			# V1.2 PCB
-			# GPIO 2x pins (enable gpio option)
-			# DotStar pins (enable dotstar option)
-			# 
 			)
 
 	def get_template_configs(self):
@@ -164,7 +152,7 @@ class PipowerPlugin(octoprint.plugin.StartupPlugin,
 		self._logger.info("Getting values from PiPower...")
 
 		if sys.platform == "linux2":
-			self._logger.info("Getting values from PiPower PCB")
+			self._logger.warn("Getting values from PiPower PCB")
 			pcbTemperature = self.read_temperature_for_setting("pcbTemperatureSensorId")
 			internalTemperature = self.read_temperature_for_setting("internalTemperatureSensorId")
 			externalTemperature = self.read_temperature_for_setting("externalTemperatureSensorId")
