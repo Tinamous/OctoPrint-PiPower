@@ -79,17 +79,23 @@ class PiPowerHat:
 	# Pass in the key for the settings we want the temperature for
 	# and read the temperature if the sensor is defined.
 	def read_temperature_for_setting(settings, settingsKey):
-		sensor = settings.get([settingsKey])
-		self._logger.warn(settingsKey + " == " + sensor)
 
-		if sensor:
-			self._logger.warn("Reading sensor: " + sensor)
-			sensorReading = self.read_temp(sensor)
-			self._logger.warn("Read sensor: " + sensor + ":" + sensorReading)
-			return sensorReading
-		else:
-			self._logger.warn("No sensor for setting: " + settingsKey)
-			return None;
+		try: 
+			self._logger.warn("settingsKey: " + settingsKey)
+			sensor = settings.get([settingsKey])
+			self._logger.warn(settingsKey + " == " + sensor)
+
+			if sensor:
+				self._logger.warn("Reading sensor: " + sensor)
+				sensorReading = self.read_temp(sensor)
+				self._logger.warn("Read sensor: " + sensor + ":" + sensorReading)
+				return sensorReading
+			else:
+				self._logger.warn("No sensor for setting: " + settingsKey)
+				return None;
+		except:
+			self._logger.warn("Exception in read_temperature_for_settings.")
+			pass
 
 	# Read the temperature from the sensor.
 	def read_temp(sensor):
