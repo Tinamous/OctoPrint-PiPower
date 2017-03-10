@@ -216,8 +216,10 @@ class PipowerPlugin(octoprint.plugin.StartupPlugin,
 		sensor = self._settings.get([settingsKey])
 
 		if sensor:
+			self._logger.info("Reading sensor: " + sensor)
 			return self.read_temp(sensor)
 		else:
+			self._logger.warn("No sensor for setting: " + settingsKey)
 			return None;
 
 	# Read the temperature from the sensor.
@@ -233,6 +235,7 @@ class PipowerPlugin(octoprint.plugin.StartupPlugin,
 		if temp_output != -1:
 			temp_string = lines[1].strip()[temp_output+2:]
 			temp_c = float(temp_string) / 1000.0
+			self._logger.info("Read temperature of : " + temp_c)
 			return round(temp_c,1)
 
 	# Read temperature raw output from sensor	
