@@ -83,47 +83,43 @@ class PiPowerHat:
 		
 	# Pass in the key for the settings we want the temperature for
 	# and read the temperature if the sensor is defined.
-	def read_temperature_for_setting(settings, settingsKey):
+	def read_temperature_for_setting(self, settings, settingsKey):
 
 		try: 
-			self._logger.warn("settingsKey: " + settingsKey)
 			sensor = settings.get([settingsKey])
-			self._logger.warn(settingsKey + " == " + sensor)
 
 			if sensor:
 				self._logger.warn("Reading sensor: " + sensor)
-				sensorReading = self.read_temp(sensor)
-				self._logger.warn("Read sensor: " + sensor + ":" + sensorReading)
-				return sensorReading
+				return self.read_temp(sensor)
 			else:
 				self._logger.warn("No sensor for setting: " + settingsKey)
 				return None;
-		except:
-			self._logger.warn("Exception in read_temperature_for_settings.")
+		except Exception as e:
+			self._logger.exception("Error reading temperature.")
 			raise
 
 	# Read the temperature from the sensor.
-	def read_temp(sensor):
-		self._logger.warn("Reading temperature from sensor.")
-		lines = temp_raw(sensor)
-		self._logger.info("lines = : " + lines)
+	def read_temp(self, sensor):
+		lines = self.read_temp_raw(sensor)
+
 		while lines[0].strip()[-3:] != 'YES':
 			time.sleep(0.2)
-			lines = temp_raw(sensor)
+			lines = self.read_temp_raw(sensor)
 
+		# TypeError
 		temp_output = lines[1].find('t=')
 
 		if temp_output != -1:
 			temp_string = lines[1].strip()[temp_output+2:]
 			temp_c = float(temp_string) / 1000.0
-			self._logger.info("Read temperature of : " + temp_c)
 			return round(temp_c,1)
 
 	# Read temperature raw output from sensor	
-	def temp_raw(sensor):
-		sensorPath = "/sys/bus/w1/devices/{}/w1_slave".format(sensor[1])
-		f = open(sensorPath, 'r')
-		lines = f.readlines()
-		f.close()
+	# From Adafruit: https://cdn-learn.adafruit.com/downloads/pdf/adafruits-raspberry-pi-lesson-11-ds18b20-temperature-sensing.pdf
+	def read_temp_raw(self, sensor):
+		sensorPath = "/sys/bus/w1/devices/{}/w1_slave".format(sensor)
+		catdata = subprocess.Popen(['cat', sensorPath], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+		out,err = catdata.communicate()
+		out_decode = out.decode('utf-8')
+		lines = out_decode.split('\n')
 		return lines
-
