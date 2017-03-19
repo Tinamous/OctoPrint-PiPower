@@ -197,8 +197,8 @@ $(function() {
 		// Stolen from temperature.js
 		self.temperaturePlotOptions = {
             yaxis: {
-                min: 0,
-                max: 100,
+                min: 20,
+                max: 60,
                 ticks: 10
             },
             xaxis: {
