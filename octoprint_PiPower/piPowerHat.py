@@ -43,7 +43,9 @@ class PiPowerHat:
 	def getPiPowerValues(self, settings):
 		self._logger.warn("Getting values from PiPower PCB")
 		
-		pcbTemperature = self.read_temp(settings.get(["pcbTemperatureSensorId"]))
+		setting = settings.get(["pcbTemperatureSensorId"]);
+		self._logger.warn("Read temperature. Sensor: " + setting)
+		pcbTemperature = self.read_temp(setting)
 		self._logger.warn("Got PCB Temperature")
 
 		#pcbTemperature = self.read_temperature_for_setting(settings, "pcbTemperatureSensorId")
@@ -102,6 +104,7 @@ class PiPowerHat:
 
 	# Read the temperature from the sensor.
 	def read_temp(sensor):
+		self._logger.warn("Reading temperature from sensor.")
 		lines = temp_raw(sensor)
 		self._logger.info("lines = : " + lines)
 		while lines[0].strip()[-3:] != 'YES':
