@@ -13,7 +13,7 @@ import flask
 import sys
 import os
 import time
-
+import subprocess
 import logging
 import logging.handlers
 
@@ -41,14 +41,9 @@ class PiPowerHat:
 		self._logger.warn("PiPowerHat. GPIO initialized")
 
 	def getPiPowerValues(self, settings):
-		self._logger.warn("Getting values from PiPower PCB")
-		
-		setting = settings.get(["pcbTemperatureSensorId"]);
-		self._logger.warn("Read temperature. Sensor: " + setting)
-		pcbTemperature = self.read_temp(setting)
-		self._logger.warn("Got PCB Temperature")
+		self._logger.warn("Getting values from PiPower PCB")			
 
-		#pcbTemperature = self.read_temperature_for_setting(settings, "pcbTemperatureSensorId")
+		pcbTemperature = self.read_temperature_for_setting(settings, "pcbTemperatureSensorId")
 		internalTemperature = self.read_temperature_for_setting(settings, "internalTemperatureSensorId")
 		externalTemperature = self.read_temperature_for_setting(settings, "externalTemperatureSensorId")
 		extraTemperature = self.read_temperature_for_setting(settings, "extraTemperatureSensorId")
