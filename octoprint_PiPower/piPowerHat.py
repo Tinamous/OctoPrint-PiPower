@@ -26,6 +26,7 @@ class PiPowerHat:
 		self._logger = logging.getLogger(__name__)
 		self._fanSpeeds = [0,0]
 		self._fanStates = [0,0]
+		self._fanFrequency = [2000,2000]
 		self._fan_pwm = ["", ""]
 
 	def initialize(self):
@@ -43,13 +44,13 @@ class PiPowerHat:
 
 		# FAN 0 (Pin 12)
 		GPIO.setup(18, GPIO.OUT)
-		self._fan_pwm[0] = GPIO.PWM(18, 2000)
+		self._fan_pwm[0] = GPIO.PWM(18, self._fanFrequency[0])
 		self._fan_pwm[0].start(0)
+
 		# FAN 1 (Pin 33)
 		GPIO.setup(13, GPIO.OUT)
-		self._fan_pwm[1] = GPIO.PWM(13, 2000)
+		self._fan_pwm[1] = GPIO.PWM(13, self._fanFrequency[1])
 		self._fan_pwm[1].start(0)
-
 
 		self._logger.info("PiPowerHat. GPIO initialized")
 
@@ -143,15 +144,19 @@ class PiPowerHat:
 		return lines
 
 
-	def set_fan(self, fan_id, state, speed):
-		self._logger.warn("****Setting fan: {0}, State: {1} Speed: {2}".format(fan_id, state, speed))
-		self._fanSpeeds[fan_id] = speed;
-		self._fanStates[fan_id] = state;
+	def set_fan(self, fan_id, state, speed, frequency):
+		self._logger.warn("****Setting fan: {0}, State: {1} Speed: {2} Frequency: {3}".format(fan_id, state, speed, frequency))
+		self._fanSpeeds[fan_id] = speed
+		self._fanStates[fan_id] = state
+		self._fanFrequency[fan_id] = frequency
+
+		pwm = self._fan_pwm[fan_id]
+		pwm.ChangeFrequency(frequency)
 
 		if state:
-			self._fan_pwm[fan_id].ChangeDutyCycle(speed)
+			pwm.ChangeDutyCycle(speed)
 		else:
-			self._fan_pwm[fan_id].ChangeDutyCycle(0)
+			pwm.ChangeDutyCycle(0)
 
 
 

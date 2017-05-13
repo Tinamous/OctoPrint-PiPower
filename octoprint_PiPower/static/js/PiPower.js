@@ -15,6 +15,7 @@ $(function() {
         self.speed = ko.observable();
         self.speedOptions = ko.observableArray([0, 20, 40, 60, 80, 100]);
         self.selectedSpeedOption = ko.observable(0);
+        self.frequency = ko.observable(20000);
 
         self.on = function () {
             console.log("Switch fan on");
@@ -37,7 +38,8 @@ $(function() {
             var payload = {
                 fanId: self.fanId,
 				state: self.state(),
-				speed: self.selectedSpeedOption()
+				speed: self.selectedSpeedOption(),
+				frequency: self.frequency()
             };
             OctoPrint.simpleApiCommand("pipower", "setFan", payload, {});
             self.speed(self.selectedSpeedOption());

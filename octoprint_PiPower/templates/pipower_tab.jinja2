@@ -58,36 +58,48 @@
 <div class="row-fluid">
 	<h3>Fans:</h3>
 	<table class="table table-bordered table-hover">
-		<tr>
-			<th>Fan</th>
-			<th>Speed</th>
-			<th>Control</th>
-			<th>Speed</th>
-		<tr>
-		<tr data-bind="with: fan0">
-			<td data-bind="text: caption"></td>
-			<td data-bind="text: speed" style="width:10%"></td>
-			<td>
-				<button class="btn btn-block control-box" data-bind="click: on">On</button>
-				<button class="btn btn-block control-box" data-bind="click: off">Off</button>
-			</td>
-			<td style="width:30%">
-				<select class="btn btn-block control-box" data-bind="options: speedOptions, value: selectedSpeedOption"></select>
-				<button class="btn btn-block control-box" data-bind="click: update">Set</button>
-			</td>
-		</tr>
-		<tr data-bind="with: fan1">
-			<td data-bind="text: caption"></td>
-			<td data-bind="text: speed" style="width:10%"></td>
-			<td>
-				<button class="btn btn-block control-box" data-bind="click: on">On</button>
-				<button class="btn btn-block control-box" data-bind="click: off">Off</button>
-			</td>
-			<td style="width:30%">
-				<select class="btn btn-block control-box" data-bind="options: speedOptions, value: selectedSpeedOption"></select>
-				<button class="btn btn-block control-box" data-bind="click: update">Set</button>
-			</td>
-		</tr>
+        <thead>
+            <tr>
+                <th>Fan</th>
+                <th>Speed</th>
+                <th>Control</th>
+                <th>Speed</th>
+            <tr>
+        </thead>
+        <tbody>
+            <tr data-bind="with: fan0">
+                <td data-bind="text: caption"></td>
+                <td data-bind="text: speed" style="width:10%"></td>
+                <td>
+                    <button class="btn btn-block control-box" data-bind="click: on">On</button>
+                    <button class="btn btn-block control-box" data-bind="click: off">Off</button>
+                </td>
+                <td style="width:30%">
+                    <select class="btn btn-block control-box" data-bind="options: speedOptions, value: selectedSpeedOption"></select>
+                    <button class="btn btn-block control-box" data-bind="click: update">Set</button>
+                </td>
+                <td style="width:30%">
+                    <input type="text" data-bind="value: frequency" />
+                    <button class="btn btn-block control-box" data-bind="click: update">Set</button>
+                </td>
+            </tr>
+            <tr data-bind="with: fan1">
+                <td data-bind="text: caption"></td>
+                <td data-bind="text: speed" style="width:10%"></td>
+                <td>
+                    <button class="btn btn-block control-box" data-bind="click: on">On</button>
+                    <button class="btn btn-block control-box" data-bind="click: off">Off</button>
+                </td>
+                <td style="width:30%">
+                    <select class="btn btn-block control-box" data-bind="options: speedOptions, value: selectedSpeedOption"></select>
+                    <button class="btn btn-block control-box" data-bind="click: update">Set</button>
+                </td>
+                <td style="width:30%">
+                    <input type="text" data-bind="value: frequency" />
+                    <button class="btn btn-block control-box" data-bind="click: update">Set</button>
+                </td>
+            </tr>
+        </tbody>
 	</table>
 </div>
 

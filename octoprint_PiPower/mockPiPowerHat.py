@@ -20,6 +20,7 @@ class MockPiPowerHat:
 		self._logger = logging.getLogger(__name__)
 		self._fanSpeeds = [0,0]
 		self._fanStates = [0,0]
+		self._fanFrequency = [2000, 2000]
 
 	def initialize(self):
 		self._logger.setLevel(logging.DEBUG)
@@ -61,7 +62,8 @@ class MockPiPowerHat:
 	def randrange_float(self, start, stop, step):
 		return random.randint(0, int((stop - start) / step)) * step + start
 
-	def set_fan(self, fanId, state, speed):
-		self._logger.warn("****Setting fan: {0}, State: {1} Speed: {2}".format(fanId, state, speed))
-		self._fanSpeeds[fanId] = speed;
-		self._fanStates[fanId] = state;
+	def set_fan(self, fan_id, state, speed, frequency):
+		self._logger.warn("****Setting fan: {0}, State: {1} Speed: {2} Frequency: {3}".format(fan_id, state, speed, frequency))
+		self._fanSpeeds[fan_id] = speed
+		self._fanStates[fan_id] = state
+		self._fanFrequency[fan_id] = frequency

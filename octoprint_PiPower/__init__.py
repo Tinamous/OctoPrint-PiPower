@@ -118,8 +118,10 @@ class PipowerPlugin(octoprint.plugin.StartupPlugin,
 	# POST: http://localhost:5000/api/plugin/pipower
 	# X-Api-Key: <key>
 	# {
-	#	"command": "setFan0",
-	#	"percentage": "100"
+	#	"command": "setFan",
+	#   "fanId": "1",
+	#	"speed": "100",
+	#   "frequency": "20000"
 	# }
 	def on_api_command(self, command, data):
 		if command == "setGPIO16":
@@ -128,7 +130,7 @@ class PipowerPlugin(octoprint.plugin.StartupPlugin,
 			self._logger.info("setGPIO26 called, value = {value}".format(**data))
 		elif command == "setFan":
 			self._logger.info("setFan called, percentage is {speed}".format(**data))
-			self._powerHat.set_fan(data['fanId'], data['state'], data['speed'])
+			self._powerHat.set_fan(data['fanId'], data['state'], data['speed'], data['frequency'])
 
 	# API GET command
 	# GET: http://localhost:5000/api/plugin/pipower?apikey=<key>
