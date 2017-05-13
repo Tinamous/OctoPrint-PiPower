@@ -43,11 +43,11 @@ class PiPowerHat:
 
 		# FAN 0 (Pin 12)
 		GPIO.setup(18, GPIO.OUT)
-		self._fan_pwm[0] = GPIO.PWM(18, 250000)
+		self._fan_pwm[0] = GPIO.PWM(18, 2000)
 		self._fan_pwm[0].start(0)
 		# FAN 1 (Pin 33)
 		GPIO.setup(13, GPIO.OUT)
-		self._fan_pwm[1] = GPIO.PWM(13, 250000)
+		self._fan_pwm[1] = GPIO.PWM(13, 2000)
 		self._fan_pwm[1].start(0)
 
 
