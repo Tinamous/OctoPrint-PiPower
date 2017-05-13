@@ -5,24 +5,42 @@
  * License: CC-SA 4.0
  */
 $(function() {
-	function PiPowerFanViewModel(caption) {
-		var self =  this;
+	function PiPowerFanViewModel(caption, fanId) {
+        var self = this;
 
-		self.caption = ko.observable(caption);
-		self.speed = ko.observable();
-		self.speedOptions = ko.observableArray([0, 20, 40, 60, 80, 100]);
-		self.selectedSpeedOption = ko.observable(0);
+        self.caption = ko.observable(caption);
+        self.fanId = fanId;
+        self.state = ko.observable(false);
+        // Currently selected speed to shpw
+        self.speed = ko.observable();
+        self.speedOptions = ko.observableArray([0, 20, 40, 60, 80, 100]);
+        self.selectedSpeedOption = ko.observable(0);
 
-		self.setSpeed = function() {
-			console.log("Set fan speed: " + self.selectedSpeedOption());
-		}
+        self.on = function () {
+            console.log("Switch fan on");
+            self.state(true);
+            self.setFanParameters();
+        }
 
-		self.on = function() {
-			console.log("Switch fan on");
-		}
+        self.off = function () {
+            console.log("Switch fan off");
+            self.state(false);
+            self.setFanParameters();
+        }
 
-		self.off = function() {
-			console.log("Switch fan off");
+        self.update = function () {
+        	self.setFanParameters();
+        }
+
+		self.setFanParameters = function() {
+
+            var payload = {
+                fanId: self.fanId,
+				state: self.state(),
+				speed: self.selectedSpeedOption()
+            };
+            OctoPrint.simpleApiCommand("pipower", "setFan", payload, {});
+            self.speed(self.selectedSpeedOption());
 		}
 
 		return self;
@@ -106,7 +124,7 @@ $(function() {
 		self.extraTemperature = new PiPowerMeasuredValueViewModel("Extra", false); //ko.observable();
 
 		self.temperatures = [self.externalTemperature, self.internalTemperature, self.pcbTemperature, self.extraTemperature]
-		
+
 		self.voltage = new PiPowerMeasuredValueViewModel("Voltage", true);
 		self.current = new PiPowerMeasuredValueViewModel("Current", true);
 		self.power = new PiPowerMeasuredValueViewModel("Power", true);
@@ -118,8 +136,8 @@ $(function() {
 		self.lightLevel = new PiPowerMeasuredValueViewModel("Light Level")
 		self.leds = new PiPowerLedViewModel("LEDs");
 
-		self.fan0 = new PiPowerFanViewModel("F0");
-		self.fan1 = new PiPowerFanViewModel("F1");
+		self.fan0 = new PiPowerFanViewModel("F0", 0);
+		self.fan1 = new PiPowerFanViewModel("F1", 1);
 
 		self.gpioPin16 = new PiPowerGPIOViewModel("16");
 		self.gpioPin26 = new PiPowerGPIOViewModel("26");
@@ -127,7 +145,7 @@ $(function() {
 		self.onBeforeBinding = function () {
             self.settings = self.global_settings.settings.plugins.pipower;
 			console.log("PiPower Settings: " + self.settings );
-			
+
 			self.fan0.caption(self.settings.fan0Caption());
 			self.fan1.caption(self.settings.fan1Caption());
 			self.gpioPin16.caption(self.settings.gpioPin16Caption());
@@ -154,28 +172,28 @@ $(function() {
             } else {
 				self.internalTemperature.enabled(true);
                 self.internalTemperature.setValue(data.internalTemperature);
-            }   
-			
+            }
+
 			if (!data.externalTemperature) {
                 self.externalTemperature.enabled(false);
             } else {
 				self.externalTemperature.enabled(true);
                 self.externalTemperature.setValue(data.externalTemperature);
-            } 
+            }
 
 			if (!data.pcbTemperature) {
                 self.pcbTemperature.enabled(false);
             } else {
 				self.pcbTemperature.enabled(true);
                 self.pcbTemperature.setValue(data.pcbTemperature);
-            } 
+            }
 
 			if (!data.extraTemperature) {
                 self.extraTemperature.enabled(false);
             } else {
 				self.extraTemperature.enabled(true);
                 self.extraTemperature.setValue(data.extraTemperature);
-            } 
+            }
 
 			self.voltage.setValue(data.voltage);
 			self.current.setValue(data.currentMilliAmps);
@@ -231,7 +249,7 @@ $(function() {
 
 		// Stolen from temperature.js
 		self.updateTemperaturePlot = function() {
-			console.log("Updating temperatures chart");
+			//console.log("Updating temperatures chart");
             var graph = $("#pipower-temperature-graph");
             if (graph.length) {
                 var data = [];
@@ -271,7 +289,7 @@ $(function() {
                 max: 30,
                 ticks: 5
             },{
-				// Current		
+				// Current
                 min: 0,
                 max: 3000,
                 ticks: 100,
@@ -307,7 +325,7 @@ $(function() {
         };
 
 		self.updatePowerPlot = function() {
-			console.log("Updating Power chart");
+			//console.log("Updating Power chart");
             var graph = $("#pipower-power-graph");
             if (graph.length) {
                 var data = [];

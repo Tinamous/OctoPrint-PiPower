@@ -1,12 +1,12 @@
 <form class="form-horizontal">
 
-    <div class="control-group">
+    <div class="control-group col-xs-4">
         <label class="control-label">{{ _('PCB Temperature Sensor') }}</label>
         <div class="controls">
 		<div class="input-append">
 			<select data-bind="options: settings.plugins.pipower.temperatureSensors, value: settings.plugins.pipower.pcbTemperatureSensorId" >
 			</select>
-			<input type="text" class="input-block-level input-mini" data-bind="value: settings.plugins.pipower.pcbTemperatureSensorCaption">
+			<input type="text" class="input-block-level" data-bind="value: settings.plugins.pipower.pcbTemperatureSensorCaption">
 		</div>
         </div>
     </div>

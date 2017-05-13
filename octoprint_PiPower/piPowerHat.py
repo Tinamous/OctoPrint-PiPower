@@ -24,9 +24,12 @@ os.system('modprobe w1-therm')
 class PiPowerHat:
 	def __init__(self):
 		self._logger = logging.getLogger(__name__)
+		self._fanSpeeds = [0,0]
+		self._fanStates = [0,0]
+		self._fan_pwm = []
 
 	def initialize(self):
-		self._logger.warn("PiPowerHat. GPIO initializing")
+		self._logger.info("PiPowerHat. GPIO initializing")
 		self._logger.setLevel(logging.DEBUG)
 		import RPi.GPIO as GPIO 
 
@@ -38,26 +41,42 @@ class PiPowerHat:
 		GPIO.setmode(GPIO.BCM)
 		GPIO.setwarnings(False)
 
-		self._logger.warn("PiPowerHat. GPIO initialized")
+		# FAN 0 (Pin 12)
+		self._fan_pwm[0] = GPIO.PWM(18, 20000)
+		self._fan_pwm[0].start(0)
+		# FAN 1 (Pin 33)
+		self._fan_pwm[1] = GPIO.PWM(13, 20000)
+		self._fan_pwm[1].start(0)
+
+
+		self._logger.info("PiPowerHat. GPIO initialized")
 
 	def getPiPowerValues(self, settings):
-		self._logger.warn("Getting values from PiPower PCB")			
+		self._logger.info("Getting values from PiPower")			
 
+		self._logger.info("Reading temperatures.")			
 		pcbTemperature = self.read_temperature_for_setting(settings, "pcbTemperatureSensorId")
 		internalTemperature = self.read_temperature_for_setting(settings, "internalTemperatureSensorId")
 		externalTemperature = self.read_temperature_for_setting(settings, "externalTemperatureSensorId")
 		extraTemperature = self.read_temperature_for_setting(settings, "extraTemperatureSensorId")
 
+		self._logger.info("Reading Power.")			
 		# make some values up.
 		# extraTemperature = null
 		voltage = 24.3
 		currentMilliAmps = 23.3
+
+		self._logger.info("Reading Light Level.")			
 		# V1.2 PCB only
 		lightLevel = 128
-		fan0Speed = 12
-		fan1Speed = 23
+		
+
+		self._logger.info("Reading GPIOs.")			
+		# TODO: Determine if input or outputs.
 		gpioPin16Value = "LOW"
 		gpioPin26Value = "HIGH"
+
+		# These should be local variables as to how the fan/leds were set.
 		leds = "off"
 
 		return dict(
@@ -69,8 +88,10 @@ class PiPowerHat:
 			currentMilliAmps = round(currentMilliAmps,1),
 			powerWatts = round(voltage * (currentMilliAmps/1000),0),
 			lightLevel = lightLevel,
-			fan0Speed = fan0Speed,
-			fan1Speed = fan1Speed,
+			fan0On= self._fanStates[0],
+			fan0Speed = self._fanSpeeds[0],
+			fan1On= self._fanStates[1],
+			fan1Speed = self._fanSpeeds[1],
 			leds = leds,
 			gpioPin16Value = gpioPin16Value,
 			gpioPin26Value = gpioPin26Value
@@ -118,3 +139,17 @@ class PiPowerHat:
 		out_decode = out.decode('utf-8')
 		lines = out_decode.split('\n')
 		return lines
+
+
+	def set_fan(self, fan_id, state, speed):
+		self._logger.warn("****Setting fan: {0}, State: {1} Speed: {2}".format(fan_id, state, speed))
+		self._fanSpeeds[fan_id] = speed;
+		self._fanStates[fan_id] = state;
+
+		if state:
+			self._fan_pwm[fan_id].ChangeDutyCycle(speed)
+		else:
+			self._fan_pwm[fan_id].ChangeDutyCycle(0)
+
+
+

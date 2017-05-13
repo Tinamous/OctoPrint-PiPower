@@ -37,13 +37,13 @@ class PipowerPlugin(octoprint.plugin.StartupPlugin,
 
 	def initialize(self):
 		self._logger.setLevel(logging.DEBUG)
-		
+
 		if sys.platform == "linux2":
-			self._powerHat = PiPowerHat();		
+			self._powerHat = PiPowerHat();
 		else:
 			self._powerHat = MockPiPowerHat();
 
-		
+
 		self._powerHat.initialize();
 		self._logger.info("Pi Power Plugin [%s] initialized..."%self._identifier)
 
@@ -52,9 +52,9 @@ class PipowerPlugin(octoprint.plugin.StartupPlugin,
 	def get_settings_defaults(self):
 		return dict(
 			pcbTemperatureSensorCaption="PSU PCB",
-			pcbTemperatureSensorId="28-000007538f5b", 
+			pcbTemperatureSensorId="28-0000070e3270",
 			internalTemperatureSensorCaption="Internal Air",
-			internalTemperatureSensorId="28-0000070e4078",
+			internalTemperatureSensorId="28-000007538a2b",
 			externalTemperatureSensorCaption="External Air",
 			externalTemperatureSensorId="",
 			extraTemperatureSensorCaption="Extra",
@@ -65,7 +65,7 @@ class PipowerPlugin(octoprint.plugin.StartupPlugin,
 			ledsCaption = "LEDs",
 			gpioPin16Caption = "GPIO Pin 16",
 			gpioPin26Caption = "GPIO Pin 26",
-			temperatureSensors = ['','28-000007538f5b','28-0000070e4078']
+			temperatureSensors = ['','28-000007538f5b','28-0000070e4078','28-0000070e3270','28-000007538a2b' ]
 			)
 
 	def get_template_configs(self):
@@ -111,8 +111,7 @@ class PipowerPlugin(octoprint.plugin.StartupPlugin,
 		return dict(
 			setGPIO16=["value"],
 			setGPIO26=["value"],
-			setFan0=["percentage"],
-			setFan1=["percentage"]
+			setFan=["fanId", "speed", "state"],
 		)
 
 	# API POST command
@@ -127,10 +126,9 @@ class PipowerPlugin(octoprint.plugin.StartupPlugin,
 			self._logger.info("setGPIO16 called, value = {value}".format(**data))
 		elif command == "setGPIO26":
 			self._logger.info("setGPIO26 called, value = {value}".format(**data))
-		elif command == "setFan0":
-			self._logger.info("setFan0 called, percentage is {percentage}".format(**data))
-		elif command == "setFan1":
-			self._logger.info("setFan1 called, percentage is {percentage}".format(**data))
+		elif command == "setFan":
+			self._logger.info("setFan called, percentage is {speed}".format(**data))
+			self._powerHat.set_fan(data['fanId'], data['state'], data['speed'])
 
 	# API GET command
 	# GET: http://localhost:5000/api/plugin/pipower?apikey=<key>
@@ -145,11 +143,11 @@ class PipowerPlugin(octoprint.plugin.StartupPlugin,
 		self._logger.info("Started timer")
 
 	def getPiPowerValues(self):
-		self._logger.info("Getting values from PiPower...")
+		#self._logger.info("Getting values from PiPower...")
 
 		pluginData = self._powerHat.getPiPowerValues(self._settings)
 
-		self._logger.info("Publishing PiPower values")
+		#self._logger.info("Publishing PiPower values")
 		self._plugin_manager.send_plugin_message(self._identifier, pluginData)
 
 		return pluginData;
