@@ -26,7 +26,7 @@ class PiPowerHat:
 		self._logger = logging.getLogger(__name__)
 		self._fanSpeeds = [0,0]
 		self._fanStates = [0,0]
-		self._fanFrequency = [2000,2000]
+		self._fanFrequency = [20000.0,20000.0]
 		self._fan_pwm = ["", ""]
 
 	def initialize(self):
@@ -151,7 +151,7 @@ class PiPowerHat:
 		self._fanFrequency[fan_id] = frequency
 
 		pwm = self._fan_pwm[fan_id]
-		pwm.ChangeFrequency(frequency)
+		pwm.ChangeFrequency(float(frequency))
 
 		if state:
 			pwm.ChangeDutyCycle(speed)
