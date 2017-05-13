@@ -26,7 +26,7 @@ class PiPowerHat:
 		self._logger = logging.getLogger(__name__)
 		self._fanSpeeds = [0,0]
 		self._fanStates = [0,0]
-		self._fan_pwm = []
+		self._fan_pwm = ["", ""]
 
 	def initialize(self):
 		self._logger.info("PiPowerHat. GPIO initializing")
