@@ -67,6 +67,8 @@ class PipowerPlugin(octoprint.plugin.StartupPlugin,
 			pwmFrequency=200,
 			lightSensorCaption = "Light Level",
 			ledsCaption = "LEDs",
+			# Need to know if these are input or output.
+			# Probably better to have a gpio object with pin, caption, in/out
 			gpioPin16Caption = "GPIO Pin 16",
 			gpioPin26Caption = "GPIO Pin 26",
 			temperatureSensors = ['','28-000007538f5b','28-0000070e4078','28-0000070e3270','28-000007538a2b' ]
@@ -134,7 +136,7 @@ class PipowerPlugin(octoprint.plugin.StartupPlugin,
 			self._logger.info("setGPIO26 called, value = {value}".format(**data))
 		elif command == "setFan":
 			self._logger.info("setFan called, percentage is {speed}".format(**data))
-			self._powerHat.set_fan(data['fanId'], data['state'], data['speed'], data['frequency'])
+			self._powerHat.set_fan(data['fanId'], data['state'], data['speed'])
 
 	# API GET command
 	# GET: http://localhost:5000/api/plugin/pipower?apikey=<key>

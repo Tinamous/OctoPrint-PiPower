@@ -170,21 +170,28 @@ class PiPowerHat:
 		self._fanSpeeds[fan_id] = speed
 		self._fanStates[fan_id] = state
 
-		import RPi.GPIO as GPIO
+		try:
 
-		pwm = self._fan_pwm[fan_id]
+			import RPi.GPIO as GPIO
 
-		if state:
-			# If the speed is below 50% the fan may not respond well.
-			# So run the fan at full speed for 10s to get it going before dropping down.
-			if speed < 50:
-				pwm.ChangeDutyCycle(100)
-				# This isn't ideal but it will do for now.
-				time.sleep(10)
+			pwm = self._fan_pwm[fan_id]
 
-			pwm.ChangeDutyCycle(speed)
-		else:
-			pwm.ChangeDutyCycle(0)
+			if state:
+				# If the speed is below 50% the fan may not respond well.
+				# So run the fan at full speed for 10s to get it going before dropping down.
+				if speed < 50:
+					pwm.ChangeDutyCycle(100)
+					# This isn't ideal but it will do for now.
+					time.sleep(10)
+
+				self._logger.warn("Change duty cycle to: {0}".format(speed))
+				pwm.ChangeDutyCycle(speed)
+				self._logger.warn("Change duty cycle done")
+			else:
+				pwm.ChangeDutyCycle(0)
+
+		except:
+			self._logger.error("Failed to change fan speed")
 
 
 
