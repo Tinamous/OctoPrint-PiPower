@@ -30,6 +30,12 @@ os.system('modprobe w1-therm')
 # so....
 # RPi.GPIO library appears to be the easiest for now....
 
+# Current monitor/
+# See https://github.com/chrisb2/pi_ina219/blob/master/README.md
+# and https://www.hackster.io/chrisb2/raspberry-pi-ina219-voltage-current-sensor-library-f3bb54
+SHUNT_OHMS = 0.1
+MAX_EXPECTED_AMPS = 3.0
+
 # Interface for real hardware.
 class PiPowerHat:
 	def __init__(self):
@@ -84,11 +90,24 @@ class PiPowerHat:
 		externalTemperature = self.read_temperature_for_setting(settings, "externalTemperatureSensorId")
 		extraTemperature = self.read_temperature_for_setting(settings, "extraTemperatureSensorId")
 
-		self._logger.info("Reading Power.")			
+		self._logger.info("Reading Power.")
+
+		import INA219
+
+		# Expect a 0R1 resistor on the PCB
+		ina = INA219(SHUNT_OHMS)
+		# Default to 32V max range. (device supports 26V max)
+		ina.configure()
+		self._logger.info("Bus Voltage: %.3f V" % ina.voltage())
+		self._logger.info("Bus Current: %.3f mA" % ina.current())
+		self._logger.info("Power: %.3f mW" % ina.power())
+		self._logger.info("Shunt voltage: %.3f mV" % ina.shunt_voltage())
+
 		# make some values up.
 		# extraTemperature = null
-		voltage = 24.3
-		currentMilliAmps = 23.3
+		voltage = ina.voltage()
+		currentMilliAmps = ina.current()
+		power = ina.power();
 
 		self._logger.info("Reading Light Level.")			
 		# V1.2 PCB only
@@ -110,7 +129,7 @@ class PiPowerHat:
 			extraTemperature = extraTemperature,
 			voltage = round(voltage,1),
 			currentMilliAmps = round(currentMilliAmps,1),
-			powerWatts = round(voltage * (currentMilliAmps/1000),0),
+			powerWatts = round(power,0),
 			lightLevel = lightLevel,
 			fan0On= self._fanStates[0],
 			fan0Speed = self._fanSpeeds[0],
@@ -167,6 +186,7 @@ class PiPowerHat:
 
 	def set_fan(self, fan_id, state, speed):
 		self._logger.warn("****Setting fan: {0}, State: {1} Speed: {2}".format(fan_id, state, speed))
+		previousSpeed = self._fanSpeeds[fan_id]
 		self._fanSpeeds[fan_id] = speed
 		self._fanStates[fan_id] = state
 
@@ -180,15 +200,16 @@ class PiPowerHat:
 				# If the speed is below 50% the fan may not respond well.
 				# So run the fan at full speed for 10s to get it going before dropping down.
 				if speed < 50:
-					pwm.ChangeDutyCycle(100)
+					pwm.ChangeDutyCycle(100.0)
 					# This isn't ideal but it will do for now.
-					time.sleep(10)
+					self._logger.warn("Set fan to 100% and sleeping for 2 seconds to allow the fan to come to speed properly")
+					time.sleep(2)
 
 				self._logger.warn("Change duty cycle to: {0}".format(speed))
-				pwm.ChangeDutyCycle(speed)
+				pwm.ChangeDutyCycle(float(speed))
 				self._logger.warn("Change duty cycle done")
 			else:
-				pwm.ChangeDutyCycle(0)
+				pwm.ChangeDutyCycle(0.0)
 
 		except:
 			self._logger.error("Failed to change fan speed")
