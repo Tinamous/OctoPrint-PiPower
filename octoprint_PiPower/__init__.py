@@ -48,7 +48,7 @@ class PipowerPlugin(octoprint.plugin.StartupPlugin,
 		self._logger.info("Pi Power Plugin [%s] initialized..."%self._identifier)
 
 		fan0Caption = self._settings.get(["fan0Caption"])
-		self._logger.info("Pi Power Plugin. Settings Fan 0 Caption:  [%s] ..".format(fan0Caption))
+		self._logger.info("Pi Power Plugin. Settings Fan 0 Caption: {0}.".format(fan0Caption))
 
 	##~~ SettingsPlugin mixin
 
@@ -64,6 +64,7 @@ class PipowerPlugin(octoprint.plugin.StartupPlugin,
 			extraTemperatureSensorId="",
 			fan0Caption="Cooling Fan",
 			fan1Caption="Pi Fan",
+			pwmFrequency=200,
 			lightSensorCaption = "Light Level",
 			ledsCaption = "LEDs",
 			gpioPin16Caption = "GPIO Pin 16",
