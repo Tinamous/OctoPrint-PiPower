@@ -33,7 +33,7 @@ class PipowerPlugin(octoprint.plugin.StartupPlugin,
 
 	def on_after_startup(self):
 		self._logger.info("Pi Power plugin startup. Starting timer.")
-		self.startTimer(10.0)
+		self.startTimer(2.0)
 
 	def initialize(self):
 		self._logger.setLevel(logging.DEBUG)
@@ -137,6 +137,8 @@ class PipowerPlugin(octoprint.plugin.StartupPlugin,
 		elif command == "setFan":
 			self._logger.info("setFan called, percentage is {speed}".format(**data))
 			self._powerHat.set_fan(data['fanId'], data['state'], data['speed'])
+			# Update power usage as this will have changed
+			self.getPiPowerValues()
 
 	# API GET command
 	# GET: http://localhost:5000/api/plugin/pipower?apikey=<key>

@@ -122,7 +122,8 @@ class PiPowerHat:
 		# extraTemperature = null
 		voltage = self._ina.voltage()
 		currentMilliAmps = self._ina.current()
-		power = self._ina.power();
+		# Power is in mW, convert it to Watts
+		power = (self._ina.power() / 1000);
 
 		self._logger.info("Reading Light Level.")			
 		# V1.2 PCB only
@@ -142,9 +143,9 @@ class PiPowerHat:
 			internalTemperature= internalTemperature,
 			pcbTemperature = pcbTemperature,
 			extraTemperature = extraTemperature,
-			voltage = round(voltage,1),
-			currentMilliAmps = round(currentMilliAmps,1),
-			powerWatts = round(power,0),
+			voltage = round(voltage,2),
+			currentMilliAmps = round(currentMilliAmps,2),
+			powerWatts = round(power,2),
 			lightLevel = lightLevel,
 			fan0On= self._fanStates[0],
 			fan0Speed = self._fanSpeeds[0],
