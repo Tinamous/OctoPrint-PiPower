@@ -40,11 +40,16 @@ MAX_EXPECTED_AMPS = 3.0
 class PiPowerHat:
 	def __init__(self):
 		self._logger = logging.getLogger(__name__)
+		self._settings = None
+
+		# PWM Fan control
 		self._fanSpeeds = [0,0]
 		self._fanStates = [0,0]
 		self._fan_pwm_pins = [18, 13]
 		self._fan_pwm = []
-		self._settings = None
+
+		# Current monitoring with INA219
+		self._ina = None
 
 	def initialize(self, settings):
 		self._logger.info("PiPowerHat. GPIO initializing")
@@ -79,6 +84,24 @@ class PiPowerHat:
 			# Store the reference the the pwm instance for later speed use
 			self._fan_pwm.append(pwm)
 
+		self._logger.warn("Initializing INA219")
+		from ina219 import INA219
+		from ina219 import DeviceRangeError
+
+		try:
+			# Expect a 0R1 resistor on the PCB
+			self._ina = INA219(SHUNT_OHMS)
+			# Default to 32V max range. (device supports 26V max)
+			self._ina.configure()
+			self._logger.info("INA219 Configured. Reading values.")
+
+			self._logger.info("Bus Voltage: %.3f V" % self._ina.voltage())
+			self._logger.info("Bus Current: %.3f mA" % self._ina.current())
+			self._logger.info("Power: %.3f mW" % self._ina.power())
+			self._logger.info("Shunt voltage: %.3f mV" % self._ina.shunt_voltage())
+		except:
+			self._logger.warn("Initializing INA219 FAILED")
+
 		self._logger.info("PiPowerHat. GPIO initialized")
 
 	def getPiPowerValues(self, settings):
@@ -92,22 +115,14 @@ class PiPowerHat:
 
 		self._logger.info("Reading Power.")
 
-		import INA219
-
-		# Expect a 0R1 resistor on the PCB
-		ina = INA219(SHUNT_OHMS)
-		# Default to 32V max range. (device supports 26V max)
-		ina.configure()
-		self._logger.info("Bus Voltage: %.3f V" % ina.voltage())
-		self._logger.info("Bus Current: %.3f mA" % ina.current())
-		self._logger.info("Power: %.3f mW" % ina.power())
-		self._logger.info("Shunt voltage: %.3f mV" % ina.shunt_voltage())
+		from ina219 import INA219
+		from ina219 import DeviceRangeError
 
 		# make some values up.
 		# extraTemperature = null
-		voltage = ina.voltage()
-		currentMilliAmps = ina.current()
-		power = ina.power();
+		voltage = self._ina.voltage()
+		currentMilliAmps = self._ina.current()
+		power = self._ina.power();
 
 		self._logger.info("Reading Light Level.")			
 		# V1.2 PCB only
@@ -200,6 +215,7 @@ class PiPowerHat:
 				# If the speed is below 50% the fan may not respond well.
 				# So run the fan at full speed for 10s to get it going before dropping down.
 				if speed < 50:
+					self._fanSpeeds[fan_id] = 100
 					pwm.ChangeDutyCycle(100.0)
 					# This isn't ideal but it will do for now.
 					self._logger.warn("Set fan to 100% and sleeping for 2 seconds to allow the fan to come to speed properly")
@@ -207,6 +223,7 @@ class PiPowerHat:
 
 				self._logger.warn("Change duty cycle to: {0}".format(speed))
 				pwm.ChangeDutyCycle(float(speed))
+				self._fanSpeeds[fan_id] = speed
 				self._logger.warn("Change duty cycle done")
 			else:
 				pwm.ChangeDutyCycle(0.0)
