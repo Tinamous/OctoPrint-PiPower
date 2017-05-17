@@ -43,9 +43,12 @@ class PipowerPlugin(octoprint.plugin.StartupPlugin,
 		else:
 			self._powerHat = MockPiPowerHat();
 
-
-		self._powerHat.initialize();
+		# Do we have settings at this time.
+		self._powerHat.initialize(self._settings);
 		self._logger.info("Pi Power Plugin [%s] initialized..."%self._identifier)
+
+		fan0Caption = self._settings.get(["fan0Caption"])
+		self._logger.info("Pi Power Plugin. Settings Fan 0 Caption:  [%s] ..".format(fan0Caption))
 
 	##~~ SettingsPlugin mixin
 

@@ -17,6 +17,9 @@ import subprocess
 import logging
 import logging.handlers
 
+
+
+
 os.system('modprobe w1-gpio')
 os.system('modprobe w1-therm')
 
@@ -26,31 +29,58 @@ class PiPowerHat:
 		self._logger = logging.getLogger(__name__)
 		self._fanSpeeds = [0,0]
 		self._fanStates = [0,0]
-		self._fanFrequency = [20000.0,20000.0]
-		self._fan_pwm = ["", ""]
+		self._fan_pwm_pins = [18, 13]
+		self._settings = None
 
-	def initialize(self):
+	def initialize(self, settings):
 		self._logger.info("PiPowerHat. GPIO initializing")
 		self._logger.setLevel(logging.DEBUG)
-		import RPi.GPIO as GPIO 
+		self._settings = settings
+		import RPi.GPIO as GPIO
+
+		# Needed for hardware PWM usage
+		# This has to be done locally as it doesn't
+		# install on Windows and hence breaks loading
+		import wiringpi
 
 		self._logger.info("Running RPi.GPIO version '{0}'...".format(GPIO.VERSION))
+		self._logger.info("Running WiringPi2 Pi Board Version: '{0}'...".format(wiringpi.piBoardRev()))
 
 		if GPIO.VERSION < "0.6":
 			raise Exception("RPi.GPIO must be greater than 0.6")
 			
-		GPIO.setmode(GPIO.BCM)
-		GPIO.setwarnings(False)
+		#GPIO.setmode(GPIO.BCM)
+		#GPIO.setwarnings(True)
 
-		# FAN 0 (Pin 12)
-		GPIO.setup(18, GPIO.OUT)
-		self._fan_pwm[0] = GPIO.PWM(18, self._fanFrequency[0])
-		self._fan_pwm[0].start(0)
+		# Setup to use BCM pin numbers.
+		wiringpi.wiringPiSetupGpio()
 
-		# FAN 1 (Pin 33)
-		GPIO.setup(13, GPIO.OUT)
-		self._fan_pwm[1] = GPIO.PWM(13, self._fanFrequency[1])
-		self._fan_pwm[1].start(0)
+		# Setup the fan PWMs. Pi (V3) only supports 2 hardware PWM channels.
+		# Need to use 20-25kHz PWM frequency for proper fan control which
+		# is not available in other libraries.
+
+		self._logger.info("Initializing PWM Fans.")
+		# This is the clock divisor, not the actual clock frequency
+		# Pi 3 divisor of 10 gets about 20kHz
+		wiringpi.pwmSetClock(10)
+		# Set range to 100 rather than 1024 for easier %
+		wiringpi.pwmSetRange(100)
+
+		# 0 = I think is this Balanced, it works better anyway
+		# Keeps the frequency constant with a larger/smaller on time
+		# Mode 1 changes the frequency which messes with the fans.
+		wiringpi.pwmSetMode(0)
+
+		# FAN 0 (Pin 12 - BCM/GPIO 18)
+		# FAN 1 (Pin 33 - BCM/GPIO 13)
+		for fan_pin in self._fan_pwm_pins:
+			self._logger.info("Initializing PWM for fan on pin '{0}'...".format(fan_pin))
+			wiringpi.pinMode(fan_pin, 2) # mode 2 = pwm
+			wiringpi.pwmWrite(fan_pin, 0) # turn off
+
+
+		wiringpi.pinMode(13, 2)
+		wiringpi.pwmWrite(13, 0)  # duty cycle between 0 and 1024. 0 = off, 1024 = fully on
 
 		self._logger.info("PiPowerHat. GPIO initialized")
 
@@ -148,15 +178,13 @@ class PiPowerHat:
 		self._logger.warn("****Setting fan: {0}, State: {1} Speed: {2} Frequency: {3}".format(fan_id, state, speed, frequency))
 		self._fanSpeeds[fan_id] = speed
 		self._fanStates[fan_id] = state
-		self._fanFrequency[fan_id] = frequency
 
-		pwm = self._fan_pwm[fan_id]
-		pwm.ChangeFrequency(float(frequency))
+		import wiringpi
 
 		if state:
-			pwm.ChangeDutyCycle(speed)
+			wiringpi.pwmWrite(self._fan_pwm_pins[fan_id], speed)
 		else:
-			pwm.ChangeDutyCycle(0)
+			wiringpi.pwmWrite(self._fan_pwm_pins[fan_id], 0)
 
 
 

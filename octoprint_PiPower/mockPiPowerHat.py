@@ -21,10 +21,12 @@ class MockPiPowerHat:
 		self._fanSpeeds = [0,0]
 		self._fanStates = [0,0]
 		self._fanFrequency = [2000, 2000]
+		self._settings = None
 
-	def initialize(self):
+	def initialize(self, settings):
 		self._logger.setLevel(logging.DEBUG)
 		self._logger.warn("MockPiPowerHat. GPIO not initialized")
+		self._settings = settings
 
 	def getPiPowerValues(self, settings):
 		#self._logger.debug("Making up values for debug")
