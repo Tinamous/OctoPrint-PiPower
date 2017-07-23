@@ -13,9 +13,8 @@ $(function() {
         self.state = ko.observable(false);
         // Currently selected speed to shpw
         self.speed = ko.observable();
-        self.speedOptions = ko.observableArray([0, 20, 40, 60, 80, 100]);
-        self.selectedSpeedOption = ko.observable(0);
-        self.frequency = ko.observable(20000);
+        self.speedOptions = ko.observableArray([20, 40, 60, 80, 100]);
+        self.selectedSpeedOption = ko.observable(100);
 
         self.on = function () {
             console.log("Switch fan on");
@@ -39,7 +38,6 @@ $(function() {
                 fanId: self.fanId,
 				state: self.state(),
 				speed: self.selectedSpeedOption(),
-				frequency: self.frequency()
             };
             OctoPrint.simpleApiCommand("pipower", "setFan", payload, {});
             self.speed(self.selectedSpeedOption());
@@ -58,31 +56,42 @@ $(function() {
 
 		self.setMode = function() {
 			console.log("Set LED more");
-		}
+		};
 
 		self.on = function() {
 			console.log("Switch on LEDs");
-		}
+		};
 
 		self.off = function() {
 			console.log("Switch off LEDs");
-		}
+		};
 
 		return self;
 	}
 
 	function PiPowerGPIOViewModel(caption) {
 		var self = this;
+		// BCM/GPIO number
+		self.gpio = ko.observable(0);
 		self.caption = ko.observable(caption);
 		self.value = ko.observable();
+		// 0 = input, 1 = output
+		self.mode = ko.observable(0);
+
+		self.setSettings = function(settings) {
+		    console.warn("Setting gpio caption: " + caption);
+		    self.gpio(settings.gpio);
+		    self.caption(settings.caption);
+            self.mode(settings.mode);
+        };
 
 		self.setLow = function() {
 			console.log("GPIO Set Low");
-		}
+		};
 
 		self.setHigh = function() {
 			console.log("GPIO Set High");
-		}
+		};
 
 		return self;
 	}
@@ -98,7 +107,7 @@ $(function() {
 		self.setValue = function(value) {
 			self.value(value);
 			self.valueHistory.push([Date.now(),value]);
-			// 6 points per minute, 1 hour history
+			// 60 points per minute, 6 hour history
 			if (self.valueHistory.length > 6 * 60) {
 				self.valueHistory.shift(0, 1);
 			}
@@ -110,26 +119,23 @@ $(function() {
     function PiPowerViewModel(parameters) {
         var self = this;
 
-        // assign the injected parameters, e.g.:
-
-		// parameters are defined by the second part of the OCTOPRINT_VIEWMODELS below.
-		//self.loginState = parameters[0];
-//		self.settings = parameters[0];
+        // Injected in: ["settingsViewModel", "printerStateViewModel"],
 		self.global_settings = parameters[0];
 		self.printer = parameters[1];
 		console.log("Global Settings: " + self.global_settings );
-		//self.navBarTempModel = parameters[0];
 
-		self.externalTemperature = new PiPowerMeasuredValueViewModel("External", false); // ko.observable();
-		self.internalTemperature = new PiPowerMeasuredValueViewModel("Internal", false); //ko.observable();
-		self.pcbTemperature = new PiPowerMeasuredValueViewModel("PCB", true); //ko.observable();
-		self.extraTemperature = new PiPowerMeasuredValueViewModel("Extra", false); //ko.observable();
+		self.externalTemperature = new PiPowerMeasuredValueViewModel("External", false);
+		self.internalTemperature = new PiPowerMeasuredValueViewModel("Internal", false);
+		self.pcbTemperature = new PiPowerMeasuredValueViewModel("PCB", true);
+		self.extraTemperature = new PiPowerMeasuredValueViewModel("Extra", false);
 
 		self.temperatures = [self.externalTemperature, self.internalTemperature, self.pcbTemperature, self.extraTemperature]
 
 		self.voltage = new PiPowerMeasuredValueViewModel("Voltage", true);
 		self.current = new PiPowerMeasuredValueViewModel("Current", true);
 		self.power = new PiPowerMeasuredValueViewModel("Power", true);
+        self.currentFiveVoltEquivelant = new PiPowerMeasuredValueViewModel("Current", true);
+		self.currentThreeVoltThreeEquivelant = new PiPowerMeasuredValueViewModel("Current", true);
 
 		//self.powerMeasurements = [self.voltage, self.current, self.power];
 		// V & I only, makes plotting difficult otherwise.
@@ -143,6 +149,7 @@ $(function() {
 
 		self.gpioPin16 = new PiPowerGPIOViewModel("16");
 		self.gpioPin26 = new PiPowerGPIOViewModel("26");
+		self.gpioOptions = [new PiPowerGPIOViewModel("16"), new PiPowerGPIOViewModel("26")];
 
 		self.onBeforeBinding = function () {
             self.settings = self.global_settings.settings.plugins.pipower;
@@ -150,8 +157,11 @@ $(function() {
 
 			self.fan0.caption(self.settings.fan0Caption());
 			self.fan1.caption(self.settings.fan1Caption());
-			self.gpioPin16.caption(self.settings.gpioPin16Caption());
-			self.gpioPin26.caption(self.settings.gpioPin26Caption());
+
+			for (var i = 0; i< self.settings.gpioOptions.length; i++) {
+                self.gpioOptions[i].setSettings(self.settings.gpioOptions[i]);
+                //self.gpioPin26.caption(self.settings.gpioPin26Caption());
+            }
 
 			self.externalTemperature.caption(self.settings.externalTemperatureSensorCaption());
 			self.internalTemperature.caption(self.settings.internalTemperatureSensorCaption());
@@ -169,6 +179,35 @@ $(function() {
                 return;
             }
 
+            self.setTemperatures(data);
+
+            self.setPowerValues (data);
+
+			self.lightLevel.setValue(data.lightLevel);
+			self.leds.value(data.leds);
+
+			self.fan0.speed(data.fan0Speed);
+			self.fan1.speed(data.fan1Speed);
+
+			// HACK, for a minute these are the only ones anyway.
+			//self.gpioPin16.value(data.gpioPin16Value);
+			self.gpioOptions[0].value(data.gpioPin16Value);
+			//self.gpioPin26.value(data.gpioPin26Value);
+			self.gpioOptions[1].value(data.gpioPin26Value);
+
+			self.updateTemperaturePlot();
+			self.updatePowerPlot();
+	    };
+
+        self.setTemperatures = function(data) {
+
+            if (!data.pcbTemperature) {
+                self.pcbTemperature.enabled(false);
+            } else {
+				self.pcbTemperature.enabled(true);
+                self.pcbTemperature.setValue(data.pcbTemperature);
+            }
+
             if (!data.internalTemperature) {
                 self.internalTemperature.enabled(false);
             } else {
@@ -176,18 +215,12 @@ $(function() {
                 self.internalTemperature.setValue(data.internalTemperature);
             }
 
+            // Optional extras, make these dynamic.
 			if (!data.externalTemperature) {
                 self.externalTemperature.enabled(false);
             } else {
 				self.externalTemperature.enabled(true);
                 self.externalTemperature.setValue(data.externalTemperature);
-            }
-
-			if (!data.pcbTemperature) {
-                self.pcbTemperature.enabled(false);
-            } else {
-				self.pcbTemperature.enabled(true);
-                self.pcbTemperature.setValue(data.pcbTemperature);
             }
 
 			if (!data.extraTemperature) {
@@ -196,23 +229,21 @@ $(function() {
 				self.extraTemperature.enabled(true);
                 self.extraTemperature.setValue(data.extraTemperature);
             }
+        };
 
-			self.voltage.setValue(data.voltage);
-			self.current.setValue(data.currentMilliAmps);
-			self.power.setValue(data.powerWatts);
+        self.setPowerValues = function(data) {
+            try {
+                self.voltage.setValue(data.voltage);
+                self.current.setValue(data.currentMilliAmps);
+                self.power.setValue(data.powerWatts);
 
-			self.lightLevel.setValue(data.lightLevel);
-			self.leds.value(data.leds);
-
-			self.fan0.speed(data.fan0Speed);
-			self.fan1.speed(data.fan1Speed);
-
-			self.gpioPin16.value(data.gpioPin16Value);
-			self.gpioPin26.value(data.gpioPin26Value);
-
-			self.updateTemperaturePlot();
-			self.updatePowerPlot();
-	    };
+                // Convert the power into the equivelant current (mA) for 5 and 3v3
+                self.currentFiveVoltEquivelant.setValue(parseInt((data.powerWatts / 5.0) * 1000));
+                self.currentThreeVoltThreeEquivelant.setValue(parseInt((data.powerWatts / 3.3) * 1000));
+            } catch (e) {
+                console.error("Error setting the power values. Error: " + e);
+            }
+        };
 
 		// Stolen from temperature.js
 		self.temperaturePlotOptions = {

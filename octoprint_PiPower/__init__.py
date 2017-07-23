@@ -71,6 +71,18 @@ class PipowerPlugin(octoprint.plugin.StartupPlugin,
 			# Probably better to have a gpio object with pin, caption, in/out
 			gpioPin16Caption = "GPIO Pin 16",
 			gpioPin26Caption = "GPIO Pin 26",
+			gpioOptions = [
+				dict(
+					gpio=16,  #BCM Number
+					caption="GPIO 16",
+					mode = 0, # Input = 0, Output = 1
+				),
+				dict(
+					gpio=26,  # BCM Number
+					caption="GPIO 26",
+					mode=0,  # Input = 0, Output = 1
+				),
+			],
 			temperatureSensors = ['','28-000007538f5b','28-0000070e4078','28-0000070e3270','28-000007538a2b' ]
 			)
 

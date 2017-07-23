@@ -16,9 +16,19 @@
 			<td>mA</td> 
 		</tr>
 		<tr>
-			<td>Power</td> 
+			<td>Power</td>
 			<td data-bind="text:power.value"></td>
 			<td>Watts</td> 
+		</tr>
+		<tr>
+			<td>Equivalent current @5V</td>
+			<td data-bind="text:currentFiveVoltEquivelant.value"></td>
+			<td>mA</td>
+		</tr>
+		<tr>
+			<td>Equivalent current @3v3</td>
+			<td data-bind="text:currentThreeVoltThreeEquivelant.value"></td>
+			<td>mA</td>
 		</tr>
 	</table>
 </div>
@@ -78,10 +88,6 @@
                     <select class="btn btn-block control-box" data-bind="options: speedOptions, value: selectedSpeedOption"></select>
                     <button class="btn btn-block control-box" data-bind="click: update">Set</button>
                 </td>
-                <td style="width:30%">
-                    <input type="text" data-bind="value: frequency" />
-                    <button class="btn btn-block control-box" data-bind="click: update">Set</button>
-                </td>
             </tr>
             <tr data-bind="with: fan1">
                 <td data-bind="text: caption"></td>
@@ -92,10 +98,6 @@
                 </td>
                 <td style="width:30%">
                     <select class="btn btn-block control-box" data-bind="options: speedOptions, value: selectedSpeedOption"></select>
-                    <button class="btn btn-block control-box" data-bind="click: update">Set</button>
-                </td>
-                <td style="width:30%">
-                    <input type="text" data-bind="value: frequency" />
                     <button class="btn btn-block control-box" data-bind="click: update">Set</button>
                 </td>
             </tr>
@@ -111,10 +113,15 @@
 			<td data-bind="text: settings.lightSensorCaption"></td>
 			<td data-bind="text:lightLevel.value"></td>
 			<td></td>
+            <td></td>
 		</tr>	
 		<tr data-bind="with:leds">
 			<td data-bind="text: caption"></td>
 			<td data-bind="text: value"></td>
+            <td>
+                    <button class="btn btn-block control-box" data-bind="click: on">On</button>
+                    <button class="btn btn-block control-box" data-bind="click: off">Off</button>
+            </td>
 			<td  style="width:30%">
 				<select class="btn btn-block control-box" data-bind="options: ledModes, value: selectedLedMode"></select>
 				<button class="btn btn-block control-box" data-bind="click: setMode">Set Mode</button>
@@ -127,6 +134,7 @@
 				<button class="btn btn-block control-box">On</button>
 				<button class="btn btn-block control-box">Off</button>
 			</td>
+            <td></td>
 		</tr>
 	</table>
 </div>
