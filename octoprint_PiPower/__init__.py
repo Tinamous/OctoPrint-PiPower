@@ -31,18 +31,20 @@ class PipowerPlugin(octoprint.plugin.StartupPlugin,
 	def __init__(self):
 		self._readPiPowerValuesTimer = None
 
+		if sys.platform == "linux2":
+			self._powerHat = PiPowerHat();
+		else:
+			self._logger.warn("Using mock power hat")
+			self._powerHat = MockPiPowerHat();
+
+		self._temperatureSensors = self._powerHat.getTemperatureSensors()
+
 	def on_after_startup(self):
 		self._logger.info("Pi Power plugin startup. Starting timer.")
 		self.startTimer(2.0)
 
 	def initialize(self):
 		self._logger.setLevel(logging.DEBUG)
-
-		if sys.platform == "linux2":
-			self._powerHat = PiPowerHat();
-		else:
-			self._logger.warn("Using mock power hat")
-			self._powerHat = MockPiPowerHat();
 
 		# Do we have settings at this time.
 		self._powerHat.initialize(self._settings);
@@ -55,7 +57,6 @@ class PipowerPlugin(octoprint.plugin.StartupPlugin,
 
 	def get_settings_defaults(self):
 		self._logger.info("Getting available temperature sensors for settings.")
-		temperatureSensors = self._powerHat.getTemperatureSensors()
 
 		return dict(
 			# Initialize temperature sensors to empty otherwise
@@ -89,7 +90,7 @@ class PipowerPlugin(octoprint.plugin.StartupPlugin,
 					mode=0,  # Input = 0, Output = 1
 				),
 			],
-			temperatureSensors = temperatureSensors
+			temperatureSensors = self._temperatureSensors
 			)
 
 	def get_template_configs(self):
