@@ -121,12 +121,12 @@ class PiPowerHat:
 		try:
 			base_dir = '/sys/bus/w1/devices/'
 			folders = glob.glob(base_dir + '28*')
-			self._logger.info("Got folders: {0}.".format(folders))
+			#self._logger.info("Got folders: {0}.".format(folders))
 
 			sensors = ['']
 
 			for folder in folders:
-				self._logger.info("Sensor: {0}.".format(folder))
+				#self._logger.info("Sensor: {0}.".format(folder))
 				# Need to remove the start /sys/bus/w1/devices/ from the folder.
 				folder = folder.replace("/sys/bus/w1/devices/", "")
 				sensors.append(folder)
@@ -134,7 +134,7 @@ class PiPowerHat:
 			return sensors
 
 		except Exception as e:
-			self._logger.exception("Failed to get list of sensors. Exception: {0}".format(e))
+			#self._logger.exception("Failed to get list of sensors. Exception: {0}".format(e))
 			return ['']
 
 	def getPiPowerValues(self, settings):
@@ -196,8 +196,6 @@ class PiPowerHat:
 			fan1On= self._fanStates[1],
 			fan1Speed = self._fanSpeeds[1],
 			leds = leds,
-			gpioPin16Value = gpioPin16Value,
-			gpioPin26Value = gpioPin26Value,
 			gpioValues = gpio_pin_values
 			)
 

@@ -42,8 +42,8 @@ class MockPiPowerHat:
 		currentMilliAmps = self.randrange_float(600, 1500, 0.1)
 
 		gpio_pin_values = []
-		gpio_pin_values.append(dict(pin="16", value="HIGH"))
-		gpio_pin_values.append(dict(pin="26", value="LOW"))
+		gpio_pin_values.append(dict(pin="16", value=1))
+		gpio_pin_values.append(dict(pin="26", value=0))
 		gpio_pin_values.append(dict(pin="999", value=""))
 
 		return dict(
@@ -60,8 +60,6 @@ class MockPiPowerHat:
 			fan1On= self._fanStates[1],
 			fan1Speed = self._fanSpeeds[1],
 			leds = "on",
-			gpioPin16Value = "HIGH",
-			gpioPin26Value = "LOW",
 			gpioValues = gpio_pin_values
 			)
 

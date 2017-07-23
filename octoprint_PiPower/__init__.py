@@ -34,7 +34,6 @@ class PipowerPlugin(octoprint.plugin.StartupPlugin,
 		if sys.platform == "linux2":
 			self._powerHat = PiPowerHat();
 		else:
-			self._logger.warn("Using mock power hat")
 			self._powerHat = MockPiPowerHat();
 
 		self._temperatureSensors = self._powerHat.getTemperatureSensors()

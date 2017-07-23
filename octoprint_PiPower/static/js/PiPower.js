@@ -69,20 +69,18 @@ $(function() {
 		return self;
 	}
 
-	function PiPowerGPIOViewModel(caption) {
+	function PiPowerGPIOViewModel(pin) {
 		var self = this;
 		// BCM/GPIO number
-		self.gpio = ko.observable(0);
-		self.caption = ko.observable(caption);
+		self.pin = ko.observable(pin);
+		self.caption = ko.observable("");
 		self.value = ko.observable();
 		// 0 = input, 1 = output
 		self.mode = ko.observable(0);
 
 		self.setSettings = function(settings) {
-		    console.warn("Setting gpio caption: " + caption);
-		    self.gpio(settings.gpio);
-		    self.caption(settings.caption);
-            self.mode(settings.mode);
+		    self.caption(settings.caption());
+            self.mode(settings.mode());
         };
 
 		self.setLow = function() {
@@ -147,9 +145,8 @@ $(function() {
 		self.fan0 = new PiPowerFanViewModel("F0", 0);
 		self.fan1 = new PiPowerFanViewModel("F1", 1);
 
-		self.gpioPin16 = new PiPowerGPIOViewModel("16");
-		self.gpioPin26 = new PiPowerGPIOViewModel("26");
-		self.gpioOptions = [new PiPowerGPIOViewModel("16"), new PiPowerGPIOViewModel("26")];
+		// This needs to be initialized from settings.gpioOptions
+		self.gpioOptions = ko.observableArray([]);
 
 		self.onBeforeBinding = function () {
             self.settings = self.global_settings.settings.plugins.pipower;
@@ -158,10 +155,13 @@ $(function() {
 			self.fan0.caption(self.settings.fan0Caption());
 			self.fan1.caption(self.settings.fan1Caption());
 
-			for (var i = 0; i< self.settings.gpioOptions.length; i++) {
-                self.gpioOptions[i].setSettings(self.settings.gpioOptions[i]);
-                //self.gpioPin26.caption(self.settings.gpioPin26Caption());
-            }
+			var options = $.map(self.settings.gpioOptions(), function(option) {
+			    console.log("Setting options for GPIO: " + option.gpio())
+                var optionViewModel = new PiPowerGPIOViewModel(option.gpio());
+                optionViewModel.setSettings(option);
+                return optionViewModel;
+            });
+            self.gpioOptions(options);
 
 			self.externalTemperature.caption(self.settings.externalTemperatureSensorCaption());
 			self.internalTemperature.caption(self.settings.internalTemperatureSensorCaption());
@@ -189,15 +189,31 @@ $(function() {
 			self.fan0.speed(data.fan0Speed);
 			self.fan1.speed(data.fan1Speed);
 
-			// HACK, for a minute these are the only ones anyway.
-			//self.gpioPin16.value(data.gpioPin16Value);
-			self.gpioOptions[0].value(data.gpioPin16Value);
-			//self.gpioPin26.value(data.gpioPin26Value);
-			self.gpioOptions[1].value(data.gpioPin26Value);
+            self.updateGPIO(data);
 
 			self.updateTemperaturePlot();
 			self.updatePowerPlot();
 	    };
+
+        self.updateGPIO = function(data) {
+			for (var gpioRead = 0; gpioRead < data.gpioValues.length; gpioRead++) {
+			    var gpio = data.gpioValues[gpioRead];
+
+			    for (var option = 0; option < self.gpioOptions().length; option++) {
+			        var gpioOption = self.gpioOptions()[option];
+
+			        if (gpio.pin == gpioOption.pin()) {
+			            if (gpio.value == 1) {
+                            gpioOption.value("HIGH")
+                        } else if (gpio.value == 0) {
+			                gpioOption.value("LOW")
+                        } else {
+			                gpioOption.value("?")
+                        }
+                    }
+                }
+            }
+        }
 
         self.setTemperatures = function(data) {
 
