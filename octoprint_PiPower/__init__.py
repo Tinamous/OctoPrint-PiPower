@@ -41,7 +41,8 @@ class PipowerPlugin(octoprint.plugin.StartupPlugin,
 
 	def on_after_startup(self):
 		self._logger.info("Pi Power plugin startup. Starting timer.")
-		self.startTimer(2.0)
+		timerInterval = self._settings.get(["timerInterval"])
+		self.startTimer(timerInterval)
 
 	def initialize(self):
 		self._logger.setLevel(logging.DEBUG)
@@ -82,15 +83,18 @@ class PipowerPlugin(octoprint.plugin.StartupPlugin,
 				dict(
 					gpio=16,  #BCM Number
 					caption="GPIO 16",
-					mode = 0, # Input = 0, Output = 1
+					# Input = 0, Input pull down = 1, Input pull up = 2, Output = 3
+					mode = 0,
 				),
 				dict(
 					gpio=26,  # BCM Number
 					caption="GPIO 26",
-					mode=0,  # Input = 0, Output = 1
+					# Input = 0, Input pull down = 1, Input pull up = 2, Output = 3
+					mode=0,
 				),
 			],
-			temperatureSensors = self._temperatureSensors
+			temperatureSensors = self._temperatureSensors,
+			timerInterval = 2.0
 			)
 
 	def get_template_configs(self):
@@ -134,9 +138,13 @@ class PipowerPlugin(octoprint.plugin.StartupPlugin,
 	# API POST command options
 	def get_api_commands(self):
 		return dict(
-			setGPIO16=["value"],
-			setGPIO26=["value"],
-			setFan=["fanId", "speed", "state"],
+			setGPIO=["pin", "value"],
+			setFan=["fanId", "state", "speed"], # depricated
+			setFanState=["fanId", "state"], # On/Off
+			setFanSpeed=["fanId", "speed"],
+			setLEDsState=["state"],
+			setLEDsMode=["mode"],
+			setDisplayBacklight=["state"],
 		)
 
 	# API POST command
@@ -146,18 +154,31 @@ class PipowerPlugin(octoprint.plugin.StartupPlugin,
 	#	"command": "setFan",
 	#   "fanId": "1",
 	#	"speed": "100",
-	#   "frequency": "20000"
 	# }
 	def on_api_command(self, command, data):
-		if command == "setGPIO16":
-			self._logger.info("setGPIO16 called, value = {value}".format(**data))
-		elif command == "setGPIO26":
-			self._logger.info("setGPIO26 called, value = {value}".format(**data))
+		if command == "setGPIO":
+			self._logger.info("setGPID called. Options: {Options}".format(**data))
+			self._powerHat.set_gpio(data['pin'], data['value'])
 		elif command == "setFan":
 			self._logger.info("setFan called, percentage is {speed}".format(**data))
 			self._powerHat.set_fan(data['fanId'], data['state'], data['speed'])
 			# Update power usage as this will have changed
 			self.getPiPowerValues()
+		elif command == "setFanState":
+			self._logger.info("setFanState called.")
+			self._powerHat.set_fan(data['fanId'], data['state'], data['speed'])
+			# Update power usage as this will have changed
+			self.getPiPowerValues()
+		elif command == "setFanSpeed":
+			self._logger.info("setFanSpeed called.")
+			self._powerHat.set_fan(data['fanId'], data['state'], data['speed'])
+			# Update power usage as this will have changed
+			self.getPiPowerValues()
+		elif command == "setLEDs":
+			self._logger.info("seltLEDs called. Options: {Options}".format(**data))
+		elif command == "setDisplayBacklight":
+			self._logger.info("setDisplayBacklight called. Options: {Options}".format(**data))
+
 
 	# API GET command
 	# GET: http://localhost:5000/api/plugin/pipower?apikey=<key>
@@ -169,7 +190,7 @@ class PipowerPlugin(octoprint.plugin.StartupPlugin,
 	def startTimer(self, interval):
 		self._readPiPowerValuesTimer = RepeatedTimer(interval, self.getPiPowerValues, None, None, True)
 		self._readPiPowerValuesTimer.start()
-		self._logger.info("Started timer")
+		self._logger.info("Started timer. Intervale: {0}".format(interval))
 
 	def getPiPowerValues(self):
 		#self._logger.info("Getting values from PiPower...")

@@ -41,6 +41,11 @@ class MockPiPowerHat:
 		voltage = self.randrange_float(11, 13, 0.01)
 		currentMilliAmps = self.randrange_float(600, 1500, 0.1)
 
+		gpio_pin_values = []
+		gpio_pin_values.append(dict(pin="16", value="HIGH"))
+		gpio_pin_values.append(dict(pin="26", value="LOW"))
+		gpio_pin_values.append(dict(pin="999", value=""))
+
 		return dict(
 			externalTemperature= self.read_temperature("1"),
 			internalTemperature= self.read_temperature("2"),
@@ -56,7 +61,8 @@ class MockPiPowerHat:
 			fan1Speed = self._fanSpeeds[1],
 			leds = "on",
 			gpioPin16Value = "HIGH",
-			gpioPin26Value = "LOW"
+			gpioPin26Value = "LOW",
+			gpioValues = gpio_pin_values
 			)
 
 	def read_temperature(self, sensor):

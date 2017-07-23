@@ -85,6 +85,9 @@ class PiPowerHat:
 			# Store the reference the the pwm instance for later speed use
 			self._fan_pwm.append(pwm)
 
+
+		# Setup the INA219 Power monitor
+
 		self._logger.warn("Initializing INA219")
 		from ina219 import INA219
 		from ina219 import DeviceRangeError
@@ -102,6 +105,13 @@ class PiPowerHat:
 			self._logger.info("Shunt voltage: %.3f mV" % self._ina.shunt_voltage())
 		except:
 			self._logger.warn("Initializing INA219 FAILED")
+
+
+		# Setup GPIO Pins 16 and 26.
+		# TODO: Allow settings to device input or output.
+		GPIO.setup(16, GPIO.IN)
+		GPIO.setup(26, GPIO.IN)
+
 
 		self._logger.info("PiPowerHat. GPIO initialized")
 
@@ -153,10 +163,21 @@ class PiPowerHat:
 		lightLevel = 128
 		
 
-		self._logger.info("Reading GPIOs.")			
-		# TODO: Determine if input or outputs.
-		gpioPin16Value = "LOW"
-		gpioPin26Value = "HIGH"
+		self._logger.info("Reading GPIOs.")
+		import RPi.GPIO as GPIO
+
+		gpio_pin_values = []
+		for gpio_pin in settings.get(["gpioOptions"]):
+			self._logger.info("Getting GPIO for pin: {0}.".format(gpio_pin))
+			if gpio_pin["gpio"] == 16:
+				self._logger.info("Getting GPIO 16.")
+				gpioPin16Value = self.get_gpio_pin_value(gpio_pin)
+				gpio_pin_values.append(dict(pin=gpio_pin["gpio"], value=gpioPin16Value))
+			if gpio_pin["gpio"] == 26:
+				self._logger.info("Getting GPIO 26.")
+				gpioPin26Value = self.get_gpio_pin_value(gpio_pin)
+				gpio_pin_values.append(dict(pin=gpio_pin["gpio"], value=gpioPin16Value))
+
 
 		# These should be local variables as to how the fan/leds were set.
 		leds = "off"
@@ -176,9 +197,20 @@ class PiPowerHat:
 			fan1Speed = self._fanSpeeds[1],
 			leds = leds,
 			gpioPin16Value = gpioPin16Value,
-			gpioPin26Value = gpioPin26Value
+			gpioPin26Value = gpioPin26Value,
+			gpioValues = gpio_pin_values
 			)
-		
+
+	def get_gpio_pin_value(self, gpio_pin_options):
+		# TODO: Store set value and return that.
+		# Mode: Input = 0, Input pull down = 1, Input pull up = 2, Output = 3
+		if gpio_pin_options["mode"] == 3:
+			return "" # Unknown
+		else:
+			# Using BCM pin nuimber
+			import RPi.GPIO as GPIO
+			return GPIO.input(gpio_pin_options["gpio"])
+
 	# Pass in the key for the settings we want the temperature for
 	# and read the temperature if the sensor is defined.
 	def read_temperature_for_setting(self, settings, settingsKey):
@@ -224,7 +256,7 @@ class PiPowerHat:
 
 
 	def set_fan(self, fan_id, state, speed):
-		self._logger.warn("****Setting fan: {0}, State: {1} Speed: {2}".format(fan_id, state, speed))
+		self._logger.warn("Setting fan: {0}, State: {1} Speed: {2}".format(fan_id, state, speed))
 		previousSpeed = self._fanSpeeds[fan_id]
 		self._fanSpeeds[fan_id] = speed
 		self._fanStates[fan_id] = state
@@ -253,5 +285,13 @@ class PiPowerHat:
 		except:
 			self._logger.error("Failed to change fan speed")
 
+	def set_gpio(self, pin, state):
+		self._logger.warn("Setting GPIO Pin: {0}, State: {1}".format(pin, state))
+		import RPi.GPIO as GPIO
 
+		# TODO: Ensure the pin is defined as output.
 
+		if state:
+			GPIO.output(pin, 1)
+		else:
+			GPIO.output(pin, 0)
