@@ -104,6 +104,9 @@ class PiPowerHat:
 
 		self._logger.info("PiPowerHat. GPIO initialized")
 
+	def getTemperatureSensors(self):
+		return ['','28-000007538f5b','28-0000070e4078','28-0000070e3270','28-000007538a2b' ]
+
 	def getPiPowerValues(self, settings):
 		self._logger.info("Getting values from PiPower")			
 
@@ -164,10 +167,10 @@ class PiPowerHat:
 			sensor = settings.get([settingsKey])
 
 			if sensor:
-				self._logger.warn("Reading sensor: " + sensor)
+				self._logger.info("Reading sensor: " + sensor)
 				return self.read_temp(sensor)
 			else:
-				self._logger.warn("No sensor for setting: " + settingsKey)
+				# self._logger.info("No sensor for setting: " + settingsKey)
 				return None;
 		except Exception as e:
 			self._logger.exception("Error reading temperature.")
@@ -213,19 +216,17 @@ class PiPowerHat:
 			pwm = self._fan_pwm[fan_id]
 
 			if state:
-				# If the speed is below 50% the fan may not respond well.
-				# So run the fan at full speed for 10s to get it going before dropping down.
-				if speed < 50:
+				# If the speed is below 50% and the fan is running slow the fan may not respond well.
+				# So run the fan at full speed for 2s to get it going before setting the required level.
+				if speed < 50 and previousSpeed < speed:
 					self._fanSpeeds[fan_id] = 100
 					pwm.ChangeDutyCycle(100.0)
 					# This isn't ideal but it will do for now.
-					self._logger.warn("Set fan to 100% and sleeping for 2 seconds to allow the fan to come to speed properly")
+					self._logger.info("Set fan to 100% and sleeping for 2 seconds to allow the fan to come to speed properly")
 					time.sleep(2)
 
-				self._logger.warn("Change duty cycle to: {0}".format(speed))
 				pwm.ChangeDutyCycle(float(speed))
 				self._fanSpeeds[fan_id] = speed
-				self._logger.warn("Change duty cycle done")
 			else:
 				pwm.ChangeDutyCycle(0.0)
 

@@ -27,6 +27,9 @@ class MockPiPowerHat:
 		self._logger.warn("MockPiPowerHat. GPIO not initialized")
 		self._settings = settings
 
+	def getTemperatureSensors(self):
+		return ['', '28-000007538f5b', '28-0000070e4078', '28-0000070e3270', '28-000007538a2b']
+
 	def getPiPowerValues(self, settings):
 		#self._logger.debug("Making up values for debug")
 

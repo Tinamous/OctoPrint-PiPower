@@ -41,6 +41,7 @@ class PipowerPlugin(octoprint.plugin.StartupPlugin,
 		if sys.platform == "linux2":
 			self._powerHat = PiPowerHat();
 		else:
+			self._logger.warn("Using mock power hat")
 			self._powerHat = MockPiPowerHat();
 
 		# Do we have settings at this time.
@@ -53,11 +54,16 @@ class PipowerPlugin(octoprint.plugin.StartupPlugin,
 	##~~ SettingsPlugin mixin
 
 	def get_settings_defaults(self):
+		self._logger.info("Getting available temperature sensors for settings.")
+		temperatureSensors = self._powerHat.getTemperatureSensors()
+
 		return dict(
+			# Initialize temperature sensors to empty otherwise
+			# if sensor is not found it hangs.
 			pcbTemperatureSensorCaption="PSU PCB",
-			pcbTemperatureSensorId="28-0000070e3270",
+			pcbTemperatureSensorId="",
 			internalTemperatureSensorCaption="Internal Air",
-			internalTemperatureSensorId="28-000007538a2b",
+			internalTemperatureSensorId="",
 			externalTemperatureSensorCaption="External Air",
 			externalTemperatureSensorId="",
 			extraTemperatureSensorCaption="Extra",
@@ -83,7 +89,7 @@ class PipowerPlugin(octoprint.plugin.StartupPlugin,
 					mode=0,  # Input = 0, Output = 1
 				),
 			],
-			temperatureSensors = ['','28-000007538f5b','28-0000070e4078','28-0000070e3270','28-000007538a2b' ]
+			temperatureSensors = temperatureSensors
 			)
 
 	def get_template_configs(self):
