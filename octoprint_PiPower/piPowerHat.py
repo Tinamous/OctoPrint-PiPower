@@ -108,16 +108,24 @@ class PiPowerHat:
 	def getTemperatureSensors(self):
 		#return ['','28-000007538f5b','28-0000070e4078','28-0000070e3270','28-000007538a2b' ]
 
-		base_dir = '/sys/bus/w1/devices/'
-		folders = glob.glob(base_dir + '28*')
-		self._logger.info("Got folders: {0}.".format(folders))
+		try:
+			base_dir = '/sys/bus/w1/devices/'
+			folders = glob.glob(base_dir + '28*')
+			self._logger.info("Got folders: {0}.".format(folders))
 
-		sensors = ['']
-		for folder in folders:
-			self._logger.info("Sensor: {0}.".format(folder))
-			sensors.append(folder)
+			sensors = ['']
 
-		return sensors
+			for folder in folders:
+				self._logger.info("Sensor: {0}.".format(folder))
+				# Need to remove the start /sys/bus/w1/devices/ from the folder.
+				folder = folder.replace("/sys/bus/w1/devices/", "")
+				sensors.append(folder)
+
+			return sensors
+
+		except Exception as e:
+			self._logger.exception("Failed to get list of sensors. Exception: {0}".format(e))
+			return ['']
 
 	def getPiPowerValues(self, settings):
 		self._logger.info("Getting values from PiPower")			
