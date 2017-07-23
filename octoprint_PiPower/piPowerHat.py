@@ -14,6 +14,7 @@ import sys
 import os
 import time
 import subprocess
+import glob
 import logging
 import logging.handlers
 
@@ -105,7 +106,18 @@ class PiPowerHat:
 		self._logger.info("PiPowerHat. GPIO initialized")
 
 	def getTemperatureSensors(self):
-		return ['','28-000007538f5b','28-0000070e4078','28-0000070e3270','28-000007538a2b' ]
+		#return ['','28-000007538f5b','28-0000070e4078','28-0000070e3270','28-000007538a2b' ]
+
+		base_dir = '/sys/bus/w1/devices/'
+		folders = glob.glob(base_dir + '28*')
+		self._logger.info("Got folders: {0}.".format(folders))
+
+		sensors = ['']
+		for folder in folders:
+			self._logger.info("Sensor: {0}.".format(folder))
+			sensors.append(folder)
+
+		return sensors
 
 	def getPiPowerValues(self, settings):
 		self._logger.info("Getting values from PiPower")			
