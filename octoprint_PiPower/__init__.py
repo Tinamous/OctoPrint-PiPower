@@ -75,13 +75,13 @@ class PipowerPlugin(octoprint.plugin.StartupPlugin,
 			ledsCaption = "LEDs",
 			gpioOptions = [
 				dict(
-					gpio=16,  #BCM Number
+					pin=16,  #BCM Number
 					caption="GPIO 16",
 					# Disabled = 0, Input = 1, Input pull down = 2, Input pull up = 3, Output = 4
 					mode=1,
 				),
 				dict(
-					gpio=26,  # BCM Number
+					pin=26,  # BCM Number
 					caption="GPIO 26",
 					# Disabled = 0, Input = 1, Input pull down = 2, Input pull up = 3, Output = 4
 					mode=1,

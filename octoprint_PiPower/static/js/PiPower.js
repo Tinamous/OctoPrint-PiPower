@@ -158,7 +158,7 @@ $(function() {
             if (value<self.minValue()) {
 			    self.minValue(value);
             }
-		}
+		};
 
 		return self;
 	}
@@ -205,8 +205,8 @@ $(function() {
 
             // GPIO
 			var options = $.map(self.settings.gpioOptions(), function(option) {
-			    console.log("Setting options for GPIO: " + option.gpio())
-                var optionViewModel = new PiPowerGPIOViewModel(option.gpio());
+			    console.log("Setting options for GPIO: " + option.pin())
+                var optionViewModel = new PiPowerGPIOViewModel(option.pin());
                 optionViewModel.setSettings(option);
                 return optionViewModel;
             });
