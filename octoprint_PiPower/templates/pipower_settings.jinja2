@@ -1,88 +1,77 @@
 <form class="form-horizontal">
 
-    <div class="control-group col-xs-4">
-        <label class="control-label">{{ _('PCB Temperature Sensor') }}</label>
-        <div class="controls">
-		<div class="input-append">
-			<select data-bind="options: settings.plugins.pipower.temperatureSensors, value: settings.plugins.pipower.pcbTemperatureSensorId" >
-			</select>
-			<input type="text" class="input-block-level" data-bind="value: settings.plugins.pipower.pcbTemperatureSensorCaption">
-		</div>
+    <h3>Temperature Sensors</h3>
+    <!-- ko foreach:settings.plugins.pipower.temperatureSensors -->
+        <div class="control-group">
+            <div>
+                <label class="control-label">Temperature Sensor</label>
+                <div class="controls">
+                    <select data-bind="options: $parent.settings.plugins.pipower.temperatureSensorOptions, value: sensorId" ></select>
+                </div>
+            </div>
+            <div>
+                <label class="control-label">Caption</label>
+                <div class="controls">
+                    <input type="text" class="input-block-level" data-bind="value: caption">
+                </div>
+            </div>
         </div>
-    </div>
+    <!-- /ko -->
 
+    <h3>Fans</h3>
     <div class="control-group">
-        <label class="control-label">{{ _('Internal Sensor') }}</label>
-        <div class="controls">
-		<div class="input-append">
-			<input type="text" class="input-block-level" data-bind="value: settings.plugins.pipower.internalTemperatureSensorCaption">
-			<select data-bind="options: settings.plugins.pipower.temperatureSensors, value: settings.plugins.pipower.internalTemperatureSensorId" >
-			</select>
-		</div>
-        </div>
-    </div>
-
-    <div class="control-group">
-        <label class="control-label">{{ _('External Sensor') }}</label>
-        <div class="controls">
-		<div class="input-append">
-			<input type="text" class="input-block-level" data-bind="value: settings.plugins.pipower.externalTemperatureSensorCaption">
-			<select data-bind="options: settings.plugins.pipower.temperatureSensors, value: settings.plugins.pipower.externalTemperatureSensorId" >
-			</select>
-		</div>
-        </div>
-    </div>
-
-    <div class="control-group">
-        <label class="control-label">{{ _('Additional Sensor') }}</label>
-        <div class="controls">
-		<div class="input-append">
-			<input type="text" class="input-block-level" data-bind="value: settings.plugins.pipower.extraTemperatureSensorCaption">
-			<select data-bind="options: settings.plugins.pipower.temperatureSensors, value: settings.plugins.pipower.extraTemperatureSensorId" >
-			</select>
-		</div>
-        </div>
-    </div>
-
-    <div class="control-group">
-        <label class="control-label">{{ _('fan0Caption') }}</label>
+        <label class="control-label">{{ _('Fan 0 Caption') }}</label>
         <div class="controls">
             <input type="text" class="input-block-level" data-bind="value: settings.plugins.pipower.fan0Caption">
         </div>
     </div>
 
     <div class="control-group">
-        <label class="control-label">{{ _('fan1Caption') }}</label>
+        <label class="control-label">{{ _('Fan 1 Caption') }}</label>
         <div class="controls">
             <input type="text" class="input-block-level" data-bind="value: settings.plugins.pipower.fan1Caption">
         </div>
     </div>
 
+    <h3>Light Sensors</h3>
     <div class="control-group">
-        <label class="control-label">{{ _('lightSensorCaption') }}</label>
+        <label class="control-label">{{ _('Light Sensor Caption') }}</label>
         <div class="controls">
             <input type="text" class="input-block-level" data-bind="value: settings.plugins.pipower.lightSensorCaption">
         </div>
     </div>
 
+    <h3>LEDs</h3>
     <div class="control-group">
-        <label class="control-label">{{ _('ledsCaption') }}</label>
+        <label class="control-label">{{ _('Leds Caption') }}</label>
         <div class="controls">
             <input type="text" class="input-block-level" data-bind="value: settings.plugins.pipower.ledsCaption">
         </div>
     </div>
-    
-    <div class="control-group">
-        <label class="control-label">{{ _('gpioPin16Caption') }}</label>
-        <div class="controls">
-            <input type="text" class="input-block-level" data-bind="value: settings.plugins.pipower.gpioPin16Caption">
-        </div>
-    </div>
 
-    <div class="control-group">
-        <label class="control-label">{{ _('gpioPin26Caption') }}</label>
-        <div class="controls">
-            <input type="text" class="input-block-level" data-bind="value: settings.plugins.pipower.gpioPin26Caption">
+    <h3>GPIO</h3>
+    <!-- ko foreach:settings.plugins.pipower.gpioOptions -->
+        <h4>GPIO Pin <span data-bind="text: gpio"></span></h4>
+        <div class="control-group">
+            <div>
+                <label class="control-label">Caption</label>
+                <div class="controls">
+                    <input type="text" class="input-block-level" data-bind="value: caption">
+                </div>
+            </div>
+            <div>
+                <label class="control-label">Mode:</label>
+                <div class="controls">
+                    <select data-bind="value: mode" >
+                        <option value="0">Disabled</option>
+                        <option value="1">Input</option>
+                        <option value="2">Input - Pull Down</option>
+                        <option value="3">Input - Pull Up</option>
+                        <option value="4">Output</option>
+                    </select>
+                </div>
+            </div>
         </div>
-    </div>
+    <!-- /ko -->
+
 </form>

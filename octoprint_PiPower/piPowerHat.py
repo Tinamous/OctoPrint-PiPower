@@ -88,7 +88,7 @@ class PiPowerHat:
 
 		# Setup the INA219 Power monitor
 
-		self._logger.warn("Initializing INA219")
+		self._logger.info("Initializing INA219")
 		from ina219 import INA219
 		from ina219 import DeviceRangeError
 
@@ -107,13 +107,33 @@ class PiPowerHat:
 			self._logger.warn("Initializing INA219 FAILED")
 
 
-		# Setup GPIO Pins 16 and 26.
-		# TODO: Allow settings to device input or output.
-		GPIO.setup(16, GPIO.IN)
-		GPIO.setup(26, GPIO.IN)
-
+		# Setup GPIO Pins
+		self._logger.warn("Initializing GPIO Pins")
+		for gpio_option in settings.get(['gpioOptions']):
+			self.setup_gpio(gpio_option)
 
 		self._logger.info("PiPowerHat. GPIO initialized")
+
+	def setup_gpio(self, gpio_option):
+		self._logger.info("Initialize GPIO pin: {0}, assigned as: {1}".format(gpio_option['gpio'], gpio_option['caption']))
+		import RPi.GPIO as GPIO
+
+		# Mode: Disabled = 0, Input = 1, Input pull down = 2, Input pull up = 3, Output = 4
+		mode = gpio_option['mode']
+		if mode == 0:
+			# Disabled
+			return;
+
+		if mode == 1:
+			# Input
+			GPIO.setup(gpio_option.gpio, GPIO.IN)
+		elif mode == 2:
+			GPIO.setup(gpio_option.gpio, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
+		elif mode == 3:
+			GPIO.setup(gpio_option.gpio, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+		elif mode == 4:
+			# Output
+			GPIO.setup(gpio_option.gpio, GPIO.OUT)
 
 	def getTemperatureSensors(self):
 		#return ['','28-000007538f5b','28-0000070e4078','28-0000070e3270','28-000007538a2b' ]
@@ -201,8 +221,13 @@ class PiPowerHat:
 
 	def get_gpio_pin_value(self, gpio_pin_options):
 		# TODO: Store set value and return that.
-		# Mode: Input = 0, Input pull down = 1, Input pull up = 2, Output = 3
-		if gpio_pin_options["mode"] == 3:
+		# Disabled = 0, Input = 1, Input pull down = 2, Input pull up = 3, Output = 4
+
+		if gpio_pin_options["mode"] == 0:
+			# Disabled
+			return None
+		elif gpio_pin_options["mode"] == 4:
+			# Output
 			return "" # Unknown
 		else:
 			# Using BCM pin nuimber
@@ -260,7 +285,6 @@ class PiPowerHat:
 		self._fanStates[fan_id] = state
 
 		try:
-
 			import RPi.GPIO as GPIO
 
 			pwm = self._fan_pwm[fan_id]
@@ -269,7 +293,6 @@ class PiPowerHat:
 				# If the speed is below 50% and the fan is running slow the fan may not respond well.
 				# So run the fan at full speed for 2s to get it going before setting the required level.
 				if speed < 50 and previousSpeed < speed:
-					self._fanSpeeds[fan_id] = 100
 					pwm.ChangeDutyCycle(100.0)
 					# This isn't ideal but it will do for now.
 					self._logger.info("Set fan to 100% and sleeping for 2 seconds to allow the fan to come to speed properly")
@@ -282,6 +305,20 @@ class PiPowerHat:
 
 		except:
 			self._logger.error("Failed to change fan speed")
+
+	# Switch the fan on/off. Uses the previously set fan speed
+	def set_fan_state(self, fan_id, state):
+		self._logger.warn("Setting fan: {0}, State: {1}".format(fan_id, state))
+		speed = self._fanSpeeds[fan_id];
+
+		self.set_fan_state(fan_id, state, speed)
+
+	# Sets the fan speed. Will not switch the fan on or off.
+	def set_fan_speed(self, fan_id, speed):
+		self._logger.warn("Setting fan: {0}, Speed: {1}".format(fan_id, speed))
+		state = self._fanStates[fan_id]
+
+		self.set_fan_state(fan_id, state, speed)
 
 	def set_gpio(self, pin, state):
 		self._logger.warn("Setting GPIO Pin: {0}, State: {1}".format(pin, state))

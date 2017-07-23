@@ -33,6 +33,7 @@
 	</table>
 </div>
 
+<!-- Temperatures -->
 
 <div class="row-fluid">
 	<h3>Temperatures:</h3>
@@ -40,30 +41,25 @@
 		<div id="pipower-temperature-graph"></div>
 	</div>
 	<table class="table table-bordered table-hover">
-		<tr>
-			<th>Probe</th>
-			<th>Temperature /&deg;C</th>
-		</tr>
+        <thead>
+            <tr>
+                <th>Probe</th>
+                <th>Temperature /&deg;C</th>
+                <th>Max /&deg;C</th>
+            </tr>
+        </thead>
 
-		<tr data-bind="if: settings.pcbTemperatureSensorId">
-			<td data-bind="text: settings.pcbTemperatureSensorCaption"></td>
-			<td data-bind="text: pcbTemperature.value"></td>
-		</tr>
-			
-		<tr data-bind="if: settings.internalTemperatureSensorId">
-			<td data-bind="text: settings.internalTemperatureSensorCaption"></td>
-			<td data-bind="text: internalTemperature.value"></td>
-		</tr>
-		<tr data-bind="if: settings.externalTemperatureSensorId">
-			<td data-bind="text: settings.externalTemperatureSensorCaption"></td>
-			<td data-bind="text: externalTemperature.value"></td>
-		</tr>
-		<tr data-bind="if: settings.extraTemperatureSensorId">
-			<td data-bind="text: settings.extraTemperatureSensorCaption"></td>
-			<td data-bind="text: extraTemperature.value"></td>
-		</tr>
+        <tbody data-bind="foreach: temperatureSensors">
+		    <tr data-bind="if: enabled">
+			    <td data-bind="text: caption"></td>
+			    <td data-bind="text: value"></td>
+                <td data-bind="text: maxValue"></td>
+		    </tr>
+        </tbody>
 	</table>
 </div>
+
+<!-- Fans -->
 
 <div class="row-fluid">
 	<h3>Fans:</h3>
@@ -105,6 +101,7 @@
 	</table>
 </div>
 
+<!-- Lights -->
 
 <div class="row-fluid">
 	<h3>Light:</h3>
@@ -139,23 +136,30 @@
 	</table>
 </div>
 
+<!-- GPIO -->
+
 <div class="row-fluid">
 	<h3>GPIO:</h3>
 	<table class="table table-bordered table-hover">
         <thead>
 		<tr>
 			<th>Pin</th>
+            <th>Mode</th>
 			<th>Value</th>
 			<th>Control</th>
 		<tr>
         </thead>
         <tbody data-bind="foreach: gpioOptions">
             <tr>
+
                 <td data-bind="text: caption"></td>
+                <td data-bind="text: modeText"></td>
                 <td data-bind="text: value" style="width:10%"></td>
                 <td>
-                    <button class="btn btn-block control-box" data-bind="click: setLow">LOW</button>
-                    <button class="btn btn-block control-box" data-bind="click: setHigh">HIGH</button>
+                    <span data-bind="visible: showControl">
+                        <button class="btn btn-block control-box" data-bind="click: setLow">LOW</button>
+                        <button class="btn btn-block control-box" data-bind="click: setHigh">HIGH</button>
+                    </span>
                 </td>
             </tr>
         </tbody>

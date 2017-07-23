@@ -18,30 +18,33 @@ $(function() {
 
         self.on = function () {
             console.log("Switch fan on");
-            self.state(true);
-            self.setFanParameters();
-        }
+            self.setFanState(true);
+        };
 
         self.off = function () {
             console.log("Switch fan off");
-            self.state(false);
-            self.setFanParameters();
-        }
+            self.setFanState(false);
+        };
 
-        self.update = function () {
-        	self.setFanParameters();
-        }
-
-		self.setFanParameters = function() {
-
+        self.setFanState = function(state)  {
+            self.state(state);
             var payload = {
                 fanId: self.fanId,
 				state: self.state(),
-				speed: self.selectedSpeedOption(),
             };
-            OctoPrint.simpleApiCommand("pipower", "setFan", payload, {});
+            OctoPrint.simpleApiCommand("pipower", "setFanState", payload, {});
+        };
+
+        self.update = function () {
             self.speed(self.selectedSpeedOption());
-		}
+
+        	var payload = {
+                fanId: self.fanId,
+				speed: self.speed(),
+            };
+            OctoPrint.simpleApiCommand("pipower", "setFanSpeed", payload, {});
+
+        };
 
 		return self;
 	}
@@ -75,8 +78,33 @@ $(function() {
 		self.pin = ko.observable(pin);
 		self.caption = ko.observable("");
 		self.value = ko.observable();
-		// 0 = input, 1 = output
+		// Disabled = 0, Input = 1, Input pull down = 2, Input pull up = 3, Output = 4
 		self.mode = ko.observable(0);
+
+		self.showControl = ko.computed(function() {
+            if (self.mode() == 4) {
+                return true;
+            }
+            return false;
+        }, this);
+
+		self.modeText = ko.computed(function() {
+		    mode = parseInt(self.mode());
+		    switch (mode) {
+                case 0:
+                    return "Disabled";
+                case 1:
+                    return "Input";
+                case 2:
+                    return "Input Pull Down";
+                case 3:
+                    return "Input Pull Up";
+                case 4:
+                    return "Output";
+                default:
+                    return "Unknown: " + self.mode();
+            }
+        });
 
 		self.setSettings = function(settings) {
 		    self.caption(settings.caption());
@@ -99,16 +127,37 @@ $(function() {
 		var self = this;
 		self.enabled = ko.observable(enabled);
 		self.caption = ko.observable(caption);
+		self.sensorId = ko.observable();
 		self.value = ko.observable();
+		self.maxValue = ko.observable(null);
+		self.minValue = ko.observable(null);
 		self.valueHistory = [];
 
 		self.setValue = function(value) {
-			self.value(value);
-			self.valueHistory.push([Date.now(),value]);
-			// 60 points per minute, 6 hour history
-			if (self.valueHistory.length > 6 * 60) {
-				self.valueHistory.shift(0, 1);
-			}
+            self.value(value);
+            self.valueHistory.push([Date.now(), value]);
+            // 60 points per minute, 6 hour history
+            if (self.valueHistory.length > 6 * 60) {
+                self.valueHistory.shift(0, 1);
+            }
+
+            // Ensure Min and Max get initialized on first call.
+            if (!self.maxValue()) {
+                self.maxValue(value);
+            }
+
+            if (!self.minValue()) {
+                self.minValue(value)
+            }
+
+            // Update min/max
+            if (value > self.maxValue()) {
+                self.maxValue(value);
+            }
+
+            if (value<self.minValue()) {
+			    self.minValue(value);
+            }
 		}
 
 		return self;
@@ -122,12 +171,7 @@ $(function() {
 		self.printer = parameters[1];
 		console.log("Global Settings: " + self.global_settings );
 
-		self.externalTemperature = new PiPowerMeasuredValueViewModel("External", false);
-		self.internalTemperature = new PiPowerMeasuredValueViewModel("Internal", false);
-		self.pcbTemperature = new PiPowerMeasuredValueViewModel("PCB", true);
-		self.extraTemperature = new PiPowerMeasuredValueViewModel("Extra", false);
-
-		self.temperatures = [self.externalTemperature, self.internalTemperature, self.pcbTemperature, self.extraTemperature]
+        self.temperatureSensors = ko.observableArray([]);
 
 		self.voltage = new PiPowerMeasuredValueViewModel("Voltage", true);
 		self.current = new PiPowerMeasuredValueViewModel("Current", true);
@@ -148,13 +192,18 @@ $(function() {
 		// This needs to be initialized from settings.gpioOptions
 		self.gpioOptions = ko.observableArray([]);
 
+		// ===================================================
+        // Before Binding - settings available
+        // ===================================================
 		self.onBeforeBinding = function () {
             self.settings = self.global_settings.settings.plugins.pipower;
 			console.log("PiPower Settings: " + self.settings );
 
+            // Fans
 			self.fan0.caption(self.settings.fan0Caption());
 			self.fan1.caption(self.settings.fan1Caption());
 
+            // GPIO
 			var options = $.map(self.settings.gpioOptions(), function(option) {
 			    console.log("Setting options for GPIO: " + option.gpio())
                 var optionViewModel = new PiPowerGPIOViewModel(option.gpio());
@@ -163,10 +212,18 @@ $(function() {
             });
             self.gpioOptions(options);
 
-			self.externalTemperature.caption(self.settings.externalTemperatureSensorCaption());
-			self.internalTemperature.caption(self.settings.internalTemperatureSensorCaption());
-			self.pcbTemperature.caption(self.settings.pcbTemperatureSensorCaption());
-			self.extraTemperature.caption(self.settings.extraTemperatureSensorCaption());
+            // Temperature Sensors
+            var temperatureSensors = $.map(self.settings.temperatureSensors(), function(sensor) {
+			    console.log("Setting temperature sensor for: " + sensor.caption())
+                var sensorViewModel = new PiPowerMeasuredValueViewModel();
+			    sensorViewModel.caption(sensor.caption());
+			    sensorViewModel.sensorId(sensor.sensorId());
+			    if (sensor.sensorId()) {
+                    sensorViewModel.enabled(true);
+                }
+                return sensorViewModel;
+            });
+            self.temperatureSensors(temperatureSensors);
 
 			self.leds.caption(self.settings.ledsCaption());
 
@@ -174,6 +231,9 @@ $(function() {
 			self.updatePowerPlot();
         };
 
+		// ===================================================
+        // Data updated event
+        // ===================================================
         self.onDataUpdaterPluginMessage = function(plugin, data) {
             if (plugin != "pipower") {
                 return;
@@ -217,33 +277,15 @@ $(function() {
 
         self.setTemperatures = function(data) {
 
-            if (!data.pcbTemperature) {
-                self.pcbTemperature.enabled(false);
-            } else {
-				self.pcbTemperature.enabled(true);
-                self.pcbTemperature.setValue(data.pcbTemperature);
-            }
+            for (var i = 0; i < data.temperatures.length; i++) {
+                var temperature = data.temperatures[i];
 
-            if (!data.internalTemperature) {
-                self.internalTemperature.enabled(false);
-            } else {
-				self.internalTemperature.enabled(true);
-                self.internalTemperature.setValue(data.internalTemperature);
-            }
-
-            // Optional extras, make these dynamic.
-			if (!data.externalTemperature) {
-                self.externalTemperature.enabled(false);
-            } else {
-				self.externalTemperature.enabled(true);
-                self.externalTemperature.setValue(data.externalTemperature);
-            }
-
-			if (!data.extraTemperature) {
-                self.extraTemperature.enabled(false);
-            } else {
-				self.extraTemperature.enabled(true);
-                self.extraTemperature.setValue(data.extraTemperature);
+                for (var j = 0; j < self.temperatureSensors().length; j++) {
+                    var sensor = self.temperatureSensors()[j];
+                    if (sensor.sensorId() == temperature.sensorId) {
+                        sensor.setValue(temperature.value);
+                    }
+                }
             }
         };
 

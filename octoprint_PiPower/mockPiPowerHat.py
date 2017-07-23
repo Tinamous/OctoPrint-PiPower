@@ -44,13 +44,13 @@ class MockPiPowerHat:
 		gpio_pin_values = []
 		gpio_pin_values.append(dict(pin="16", value=1))
 		gpio_pin_values.append(dict(pin="26", value=0))
+		gpio_pin_values.append(dict(pin="998", value="Disabled"))
 		gpio_pin_values.append(dict(pin="999", value=""))
 
+		measured_temperatures = self.read_temperatures(settings)
+
 		return dict(
-			externalTemperature= self.read_temperature("1"),
-			internalTemperature= self.read_temperature("2"),
-			pcbTemperature = self.read_temperature("3"),
-			extraTemperature = None,
+			temperatures=measured_temperatures,
 			voltage = round(voltage,1),
 			currentMilliAmps = round(currentMilliAmps,1),
 			powerWatts = round(voltage * (currentMilliAmps/1000),0),
@@ -63,6 +63,17 @@ class MockPiPowerHat:
 			gpioValues = gpio_pin_values
 			)
 
+	def read_temperatures(self, settings):
+		temperatures = []
+		for sensor in settings.get(['temperatureSensors']):
+			sensorId = sensor['sensorId']
+			if sensorId:
+				value = self.read_temperature(sensorId)
+				temperature = dict(sensorId=sensorId, value=value)
+				temperatures.append(temperature)
+
+		return temperatures
+
 	def read_temperature(self, sensor):
 		temperature = random.randint(0, 1000) * 0.1 + 20
 		return temperature
@@ -70,7 +81,10 @@ class MockPiPowerHat:
 	def randrange_float(self, start, stop, step):
 		return random.randint(0, int((stop - start) / step)) * step + start
 
-	def set_fan(self, fan_id, state, speed):
-		self._logger.warn("****Setting fan: {0}, State: {1} Speed: {2}".format(fan_id, state, speed))
-		self._fanSpeeds[fan_id] = speed
+	def set_fan_state(self, fan_id, state):
+		self._logger.warn("****Setting fan: {0}, State: {1}".format(fan_id, state))
 		self._fanStates[fan_id] = state
+
+	def set_fan_speed(self, fan_id, speed):
+		self._logger.warn("****Setting fan: {0}, Speed: {1}".format(fan_id, speed))
+		self._fanSpeeds[fan_id] = speed
