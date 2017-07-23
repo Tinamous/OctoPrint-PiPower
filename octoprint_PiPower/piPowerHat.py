@@ -115,7 +115,7 @@ class PiPowerHat:
 		self._logger.info("PiPowerHat. GPIO initialized")
 
 	def setup_gpio(self, gpio_option):
-		self._logger.info("Initialize GPIO pin: {0}, assigned as: {1}".format(gpio_option['gpio'], gpio_option['caption']))
+		self._logger.info("Initialize GPIO pin: {0}, assigned as: {1}".format(gpio_option['pin'], gpio_option['caption']))
 		import RPi.GPIO as GPIO
 
 		# Mode: Disabled = 0, Input = 1, Input pull down = 2, Input pull up = 3, Output = 4
