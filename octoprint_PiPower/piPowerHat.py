@@ -119,7 +119,7 @@ class PiPowerHat:
 		import RPi.GPIO as GPIO
 
 		# Mode: Disabled = 0, Input = 1, Input pull down = 2, Input pull up = 3, Output = 4
-		mode = gpio_option['mode']
+		mode = int(gpio_option['mode'])
 		pin = gpio_option['pin']
 
 		if mode == 0:
