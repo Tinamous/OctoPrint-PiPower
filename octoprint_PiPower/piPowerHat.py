@@ -139,42 +139,45 @@ class PiPowerHat:
 
 	# Read the parameters from the Pi Power Hat
 	def getPiPowerValues(self, settings):
-		self._logger.info("Getting values from PiPower")			
+		self._logger.info("Getting values from PiPower")
 
-		self._logger.info("Reading Temperatures.")
-		measured_temperatures = self.read_temperatures(settings)
+		try:
+			self._logger.info("Reading Temperatures.")
+			measured_temperatures = self.read_temperatures(settings)
 
-		self._logger.info("Reading Power.")
-		power = self.read_power()
+			self._logger.info("Reading Power.")
+			power = self.read_power(settings)
 
-		# V1.2 PCB only and may not be fitted
-		self._logger.info("Reading Light Level.")
-		lightLevel = self.read_light_level()
+			# V1.2 PCB only and may not be fitted
+			self._logger.info("Reading Light Level.")
+			lightLevel = self.read_light_level(settings)
 
-		self._logger.info("Reading GPIOs.")
-		gpio_pin_values = self.read_gpio_values()
+			self._logger.info("Reading GPIOs.")
+			gpio_pin_values = self.read_gpio_values(settings)
 
-		self._logger.info("Updating LED control value.")
-		leds = "off"
+			self._logger.info("Updating LED control value.")
+			leds = "off"
 
-		return dict(
-			temperatures= measured_temperatures,
-			voltage = round(power['voltage'],2),
-			currentMilliAmps = round(power['currentMilliAmps'],2),
-			powerWatts = round(power['power'],2),
-			lightLevel = lightLevel,
-			fan0On= self._fanStates[0],
-			fan0Speed = self._fanSpeeds[0],
-			fan1On= self._fanStates[1],
-			fan1Speed = self._fanSpeeds[1],
-			leds = leds,
-			gpioValues = gpio_pin_values
-			)
+			return dict(
+				temperatures= measured_temperatures,
+				voltage = round(power['voltage'],2),
+				currentMilliAmps = round(power['currentMilliAmps'],2),
+				powerWatts = round(power['power'],2),
+				lightLevel = lightLevel,
+				fan0On= self._fanStates[0],
+				fan0Speed = self._fanSpeeds[0],
+				fan1On= self._fanStates[1],
+				fan1Speed = self._fanSpeeds[1],
+				leds = leds,
+				gpioValues = gpio_pin_values
+				)
+		except Exception as e:
+			self._logger.exception("Exception reading PowerHat values. Exception: {0}".format(e))
 
 	# ===========================================
 	# Power
 	# ===========================================
-	def read_power(self):
+	def read_power(self, settings):
 		from ina219 import INA219
 		from ina219 import DeviceRangeError
 
@@ -308,7 +311,7 @@ class PiPowerHat:
 	# ===========================================
 	# Light Sensor
 	# ===========================================
-	def read_light_level(self):
+	def read_light_level(self, settings):
 		return 64
 
 	# ===========================================
@@ -316,12 +319,18 @@ class PiPowerHat:
 	# ===========================================
 	def read_gpio_values(self, settings):
 		gpio_pin_values = []
-		# import RPi.GPIO as GPIO
-		for gpio_option in settings.get(["gpioOptions"]):
-			self._logger.info("Getting GPIO for: {0}.".format(gpio_option))
-			pin = gpio_option["pin"]
-			value = self.get_gpio_pin_value(gpio_option)
-			gpio_pin_values.append(dict(pin=pin, value=value))
+
+		try:
+			# import RPi.GPIO as GPIO
+			for gpio_option in settings.get(["gpioOptions"]):
+				self._logger.info("Getting GPIO for: {0}.".format(gpio_option))
+				pin = gpio_option["pin"]
+				value = self.get_gpio_pin_value(gpio_option)
+				gpio_pin_values.append(dict(pin=pin, value=value))
+		except Exception as e:
+			self._logger.exception("Failed to read GPIO pins. Exception: {0}".format(e))
+
+		return gpio_pin_values
 
 	def get_gpio_pin_value(self, gpio_pin_options):
 		# TODO: Store set value and return that for output options
