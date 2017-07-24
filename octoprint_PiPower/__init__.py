@@ -50,9 +50,6 @@ class PipowerPlugin(octoprint.plugin.StartupPlugin,
 		self._powerHat.initialize(self._settings);
 		self._logger.info("Pi Power Plugin [%s] initialized..."%self._identifier)
 
-		fan0Caption = self._settings.get(["fan0Caption"])
-		self._logger.info("Pi Power Plugin. Settings Fan 0 Caption: {0}.".format(fan0Caption))
-
 	##~~ SettingsPlugin mixin
 
 	def get_settings_defaults(self):

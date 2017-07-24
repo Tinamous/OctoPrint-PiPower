@@ -136,75 +136,32 @@ class PiPowerHat:
 			# Output
 			GPIO.setup(pin, GPIO.OUT)
 
-	def getTemperatureSensors(self):
-		#return ['','28-000007538f5b','28-0000070e4078','28-0000070e3270','28-000007538a2b' ]
 
-		try:
-			base_dir = '/sys/bus/w1/devices/'
-			folders = glob.glob(base_dir + '28*')
-			#self._logger.info("Got folders: {0}.".format(folders))
-
-			sensors = ['']
-
-			for folder in folders:
-				#self._logger.info("Sensor: {0}.".format(folder))
-				# Need to remove the start /sys/bus/w1/devices/ from the folder.
-				folder = folder.replace("/sys/bus/w1/devices/", "")
-				sensors.append(folder)
-
-			return sensors
-
-		except Exception as e:
-			#self._logger.exception("Failed to get list of sensors. Exception: {0}".format(e))
-			return ['']
-
+	# Read the parameters from the Pi Power Hat
 	def getPiPowerValues(self, settings):
 		self._logger.info("Getting values from PiPower")			
 
-		self._logger.info("Reading temperatures.")
+		self._logger.info("Reading Temperatures.")
 		measured_temperatures = self.read_temperatures(settings)
 
 		self._logger.info("Reading Power.")
+		power = self.read_power()
 
-		from ina219 import INA219
-		from ina219 import DeviceRangeError
-
-		# make some values up.
-		# extraTemperature = null
-		voltage = self._ina.voltage()
-		currentMilliAmps = self._ina.current()
-		# Power is in mW, convert it to Watts
-		power = (self._ina.power() / 1000);
-
-		self._logger.info("Reading Light Level.")			
-		# V1.2 PCB only
-		lightLevel = 128
-		
+		# V1.2 PCB only and may not be fitted
+		self._logger.info("Reading Light Level.")
+		lightLevel = self.read_light_level()
 
 		self._logger.info("Reading GPIOs.")
-		import RPi.GPIO as GPIO
+		gpio_pin_values = self.read_gpio_values()
 
-		gpio_pin_values = []
-		for gpio_pin in settings.get(["gpioOptions"]):
-			self._logger.info("Getting GPIO for pin: {0}.".format(gpio_pin))
-			if gpio_pin["gpio"] == 16:
-				self._logger.info("Getting GPIO 16.")
-				gpioPin16Value = self.get_gpio_pin_value(gpio_pin)
-				gpio_pin_values.append(dict(pin=gpio_pin["gpio"], value=gpioPin16Value))
-			if gpio_pin["gpio"] == 26:
-				self._logger.info("Getting GPIO 26.")
-				gpioPin26Value = self.get_gpio_pin_value(gpio_pin)
-				gpio_pin_values.append(dict(pin=gpio_pin["gpio"], value=gpioPin16Value))
-
-
-		# These should be local variables as to how the fan/leds were set.
+		self._logger.info("Updating LED control value.")
 		leds = "off"
 
 		return dict(
-			temperatures=measured_temperatures,
-			voltage = round(voltage,2),
-			currentMilliAmps = round(currentMilliAmps,2),
-			powerWatts = round(power,2),
+			temperatures= measured_temperatures,
+			voltage = round(power['voltage'],2),
+			currentMilliAmps = round(power['currentMilliAmps'],2),
+			powerWatts = round(power['power'],2),
 			lightLevel = lightLevel,
 			fan0On= self._fanStates[0],
 			fan0Speed = self._fanSpeeds[0],
@@ -214,20 +171,56 @@ class PiPowerHat:
 			gpioValues = gpio_pin_values
 			)
 
-	def get_gpio_pin_value(self, gpio_pin_options):
-		# TODO: Store set value and return that.
-		# Disabled = 0, Input = 1, Input pull down = 2, Input pull up = 3, Output = 4
+	# ===========================================
+	# Power
+	# ===========================================
+	def read_power(self):
+		from ina219 import INA219
+		from ina219 import DeviceRangeError
 
-		if gpio_pin_options["mode"] == 0:
-			# Disabled
-			return None
-		elif gpio_pin_options["mode"] == 4:
-			# Output
-			return "" # Unknown
-		else:
-			# Using BCM pin nuimber
-			import RPi.GPIO as GPIO
-			return GPIO.input(gpio_pin_options["gpio"])
+		# TODO: Ensure self._ina is not null.
+
+		# make some values up.
+		# extraTemperature = null
+		voltage = self._ina.voltage()
+		currentMilliAmps = self._ina.current()
+		# Power is in mW, convert it to Watts
+		power = (self._ina.power() / 1000);
+
+		return dict(
+			voltage=voltage,
+			currentMilliAmps=currentMilliAmps,
+			power=power
+		)
+
+	# ===========================================
+	# Temperature
+	# ===========================================
+
+	# Get the list of available sensors on the system
+	# This is called before settings/logger are available
+	# and before initialzie is called.
+	def getTemperatureSensors(self):
+		# return ['','28-000007538f5b','28-0000070e4078','28-0000070e3270','28-000007538a2b' ]
+
+		try:
+			base_dir = '/sys/bus/w1/devices/'
+			folders = glob.glob(base_dir + '28*')
+			# self._logger.info("Got folders: {0}.".format(folders))
+
+			sensors = ['']
+
+			for folder in folders:
+				# self._logger.info("Sensor: {0}.".format(folder))
+				# Need to remove the start /sys/bus/w1/devices/ from the folder.
+				folder = folder.replace("/sys/bus/w1/devices/", "")
+				sensors.append(folder)
+
+			return sensors
+
+		except Exception as e:
+			# self._logger.exception("Failed to get list of sensors. Exception: {0}".format(e))
+			return ['']
 
 	# Read the temperatures for each of the sensors defined in the settings
 	def read_temperatures(self, settings):
@@ -267,7 +260,9 @@ class PiPowerHat:
 		lines = out_decode.split('\n')
 		return lines
 
-
+	# ===========================================
+	# Fans
+	# ===========================================
 	def set_fan(self, fan_id, state, speed):
 		self._logger.warn("Setting fan: {0}, State: {1} Speed: {2}".format(fan_id, state, speed))
 		previousSpeed = self._fanSpeeds[fan_id]
@@ -309,6 +304,39 @@ class PiPowerHat:
 		state = self._fanStates[fan_id]
 
 		self.set_fan_state(fan_id, state, speed)
+
+	# ===========================================
+	# Light Sensor
+	# ===========================================
+	def read_light_level(self):
+		return 64
+
+	# ===========================================
+	# GPIO Pins
+	# ===========================================
+	def read_gpio_values(self, settings):
+		gpio_pin_values = []
+		# import RPi.GPIO as GPIO
+		for gpio_option in settings.get(["gpioOptions"]):
+			self._logger.info("Getting GPIO for: {0}.".format(gpio_option))
+			pin = gpio_option["pin"]
+			value = self.get_gpio_pin_value(gpio_option)
+			gpio_pin_values.append(dict(pin=pin, value=value))
+
+	def get_gpio_pin_value(self, gpio_pin_options):
+		# TODO: Store set value and return that for output options
+		# Disabled = 0, Input = 1, Input pull down = 2, Input pull up = 3, Output = 4
+
+		if gpio_pin_options["mode"] == 0:
+			# Disabled
+			return None
+		elif gpio_pin_options["mode"] == 4:
+			# Output
+			return ""  # Unknown
+		else:
+			# Using BCM pin nuimber
+			import RPi.GPIO as GPIO
+			return GPIO.input(gpio_pin_options["pin"])
 
 	def set_gpio(self, pin, state):
 		self._logger.warn("Setting GPIO Pin: {0}, State: {1}".format(pin, state))
