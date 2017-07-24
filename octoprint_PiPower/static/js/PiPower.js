@@ -345,9 +345,9 @@ $(function() {
             if (graph.length) {
                 var data = [];
 
-                var maxTemps = [310/1.1];
+                var maxTemps = [60];
 
-                _.each(self.temperatures, function(temperature) {
+                _.each(self.temperatureSensors(), function(temperature) {
 
 					if (temperature.enabled())
 					{
@@ -359,11 +359,11 @@ $(function() {
 							data: actuals
 						});
 
-	                    //maxTemps.push(self.getMaxTemp(actuals, targets));
+	                    maxTemps.push(temperature.maxValue());
 					}
                 });
 
-                //self.plotOptions.yaxis.max = Math.max.apply(null, maxTemps) * 1.1;
+                self.temperaturePlotOptions.yaxis.max = Math.max.apply(null, maxTemps) * 1.1;
                 $.plot(graph, data, self.temperaturePlotOptions);
             }
         };
@@ -421,7 +421,6 @@ $(function() {
             if (graph.length) {
                 var data = [];
 
-                var maxTemps = [310/1.1];
 				var axis = 1;
 
                 _.each(self.powerMeasurements, function(powerMeasurement) {
@@ -434,14 +433,16 @@ $(function() {
 							label: powerMeasurement.caption(),
 							//color: 'red',
 							data: actuals,
-							yaxis: axis++,
+							yaxis: axis,
 						});
 
-	                    //maxTemps.push(self.getMaxTemp(actuals, targets));
+						console.log("YAces" + self.powerPlotOptions.yaxes);
+
+						self.powerPlotOptions.yaxes[axis-1].max = powerMeasurement.maxValue() * 1.2;
+						axis++;
 					}
                 });
 
-                //self.plotOptions.yaxis.max = Math.max.apply(null, maxTemps) * 1.1;
                 $.plot(graph, data, self.powerPlotOptions);
             }
         };
