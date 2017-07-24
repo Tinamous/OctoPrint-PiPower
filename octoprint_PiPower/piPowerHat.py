@@ -121,9 +121,13 @@ class PiPowerHat:
 		# Mode: Disabled = 0, Input = 1, Input pull down = 2, Input pull up = 3, Output = 4
 		mode = gpio_option['mode']
 		pin = gpio_option['pin']
+
 		if mode == 0:
+			self._logger.warn("GPIO Pin {0} Disabled".format(pin))
 			# Disabled
 			return;
+
+		self._logger.info("Setting pin {0} mode: {1}".format(pin, mode))
 
 		if mode == 1:
 			# Input
@@ -135,6 +139,8 @@ class PiPowerHat:
 		elif mode == 4:
 			# Output
 			GPIO.setup(pin, GPIO.OUT)
+		else:
+			self._logger.warn("Unknown pin mode")
 
 
 	# Read the parameters from the Pi Power Hat
