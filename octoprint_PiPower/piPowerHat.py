@@ -305,14 +305,14 @@ class PiPowerHat:
 		self._logger.info("Setting fan: {0}, State: {1}".format(fan_id, state))
 		speed = self._fanSpeeds[fan_id];
 
-		self.set_fan_state(fan_id, state, speed)
+		self.set_fan(fan_id, state, speed)
 
 	# Sets the fan speed. Will not switch the fan on or off.
 	def set_fan_speed(self, fan_id, speed):
 		self._logger.info("Setting fan: {0}, Speed: {1}".format(fan_id, speed))
 		state = self._fanStates[fan_id]
 
-		self.set_fan_state(fan_id, state, speed)
+		self.set_fan(fan_id, state, speed)
 
 	# ===========================================
 	# Light Sensor

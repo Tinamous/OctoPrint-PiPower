@@ -436,8 +436,6 @@ $(function() {
 							yaxis: axis,
 						});
 
-						console.log("YAces" + self.powerPlotOptions.yaxes);
-
 						self.powerPlotOptions.yaxes[axis-1].max = powerMeasurement.maxValue() * 1.2;
 						axis++;
 					}
