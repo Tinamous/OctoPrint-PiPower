@@ -53,8 +53,8 @@ class PiPowerHat:
 		self._ina = None
 
 	def initialize(self, settings):
-		self._logger.info("PiPowerHat. GPIO initializing")
-		self._logger.setLevel(logging.DEBUG)
+		self._logger.setLevel(logging.INFO)
+		self._logger.info("PiPowerHat initializing")
 		self._settings = settings
 		import RPi.GPIO as GPIO
 
@@ -108,7 +108,7 @@ class PiPowerHat:
 
 
 		# Setup GPIO Pins
-		self._logger.warn("Initializing GPIO Pins")
+		self._logger.info("Initializing GPIO Pins")
 		for gpio_option in settings.get(['gpioOptions']):
 			self.setup_gpio(gpio_option)
 
@@ -127,7 +127,7 @@ class PiPowerHat:
 			# Disabled
 			return;
 
-		self._logger.info("Setting pin {0} mode: {1}".format(pin, mode))
+		self._logger.debug("Setting pin {0} mode: {1}".format(pin, mode))
 
 		if mode == 1:
 			# Input
@@ -145,23 +145,23 @@ class PiPowerHat:
 
 	# Read the parameters from the Pi Power Hat
 	def getPiPowerValues(self, settings):
-		self._logger.info("Getting values from PiPower")
+		self._logger.debug("Getting values from PiPower")
 
 		try:
-			self._logger.info("Reading Temperatures.")
+			self._logger.debug("Reading Temperatures.")
 			measured_temperatures = self.read_temperatures(settings)
 
-			self._logger.info("Reading Power.")
+			self._logger.debug("Reading Power.")
 			power = self.read_power(settings)
 
 			# V1.2 PCB only and may not be fitted
-			self._logger.info("Reading Light Level.")
+			self._logger.debug("Reading Light Level.")
 			lightLevel = self.read_light_level(settings)
 
-			self._logger.info("Reading GPIOs.")
+			self._logger.debug("Reading GPIOs.")
 			gpio_pin_values = self.read_gpio_values(settings)
 
-			self._logger.info("Updating LED control value.")
+			self._logger.debug("Updating LED control value.")
 			leds = "off"
 
 			return dict(
@@ -273,7 +273,7 @@ class PiPowerHat:
 	# Fans
 	# ===========================================
 	def set_fan(self, fan_id, state, speed):
-		self._logger.warn("Setting fan: {0}, State: {1} Speed: {2}".format(fan_id, state, speed))
+		self._logger.info("Setting fan: {0}, State: {1} Speed: {2}".format(fan_id, state, speed))
 		previousSpeed = self._fanSpeeds[fan_id]
 		self._fanSpeeds[fan_id] = speed
 		self._fanStates[fan_id] = state
@@ -302,14 +302,14 @@ class PiPowerHat:
 
 	# Switch the fan on/off. Uses the previously set fan speed
 	def set_fan_state(self, fan_id, state):
-		self._logger.warn("Setting fan: {0}, State: {1}".format(fan_id, state))
+		self._logger.info("Setting fan: {0}, State: {1}".format(fan_id, state))
 		speed = self._fanSpeeds[fan_id];
 
 		self.set_fan_state(fan_id, state, speed)
 
 	# Sets the fan speed. Will not switch the fan on or off.
 	def set_fan_speed(self, fan_id, speed):
-		self._logger.warn("Setting fan: {0}, Speed: {1}".format(fan_id, speed))
+		self._logger.info("Setting fan: {0}, Speed: {1}".format(fan_id, speed))
 		state = self._fanStates[fan_id]
 
 		self.set_fan_state(fan_id, state, speed)
@@ -329,7 +329,7 @@ class PiPowerHat:
 		try:
 			# import RPi.GPIO as GPIO
 			for gpio_option in settings.get(["gpioOptions"]):
-				self._logger.info("Getting GPIO for: {0}.".format(gpio_option))
+				self._logger.debug("Getting GPIO for: {0}.".format(gpio_option))
 				pin = gpio_option["pin"]
 				value = self.get_gpio_pin_value(gpio_option)
 				gpio_pin_values.append(dict(pin=pin, value=value))
@@ -342,10 +342,12 @@ class PiPowerHat:
 		# TODO: Store set value and return that for output options
 		# Disabled = 0, Input = 1, Input pull down = 2, Input pull up = 3, Output = 4
 
-		if gpio_pin_options["mode"] == 0:
+		mode = int(gpio_pin_options["mode"])
+
+		if mode == 0:
 			# Disabled
 			return None
-		elif gpio_pin_options["mode"] == 4:
+		elif mode == 4:
 			# Output
 			return ""  # Unknown
 		else:
@@ -354,7 +356,7 @@ class PiPowerHat:
 			return GPIO.input(gpio_pin_options["pin"])
 
 	def set_gpio(self, pin, state):
-		self._logger.warn("Setting GPIO Pin: {0}, State: {1}".format(pin, state))
+		self._logger.info("Setting GPIO Pin: {0}, State: {1}".format(pin, state))
 		import RPi.GPIO as GPIO
 
 		# TODO: Ensure the pin is defined as output.
