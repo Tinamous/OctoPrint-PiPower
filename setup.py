@@ -18,7 +18,7 @@ plugin_version = "0.1.1"
 
 # The plugin's description. Can be overwritten within OctoPrint's internal data via __plugin_description__ in the plugin
 # module
-plugin_description = """TODO"""
+plugin_description = """Monitor voltage input, Pi power usage, temperatures and light level on the Pi Power Hat, and control fans and GPIO"""
 
 # The plugin's author. Can be overwritten within OctoPrint's internal data via __plugin_author__ in the plugin module
 plugin_author = "Stephen Harrison"
