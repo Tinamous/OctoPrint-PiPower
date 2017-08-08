@@ -1,7 +1,7 @@
 <div class="row-fluid">
 	<h3>Power:</h3>
 	<div class="row-fluid">
-		<div id="pipower-power-graph"></div>
+		<div id="pipower-power-graph" class="pipower-graph"></div>
 	</div>
 
 	<table class="table table-bordered table-hover">
@@ -38,7 +38,7 @@
 <div class="row-fluid">
 	<h3>Temperatures:</h3>
 	<div class="row-fluid">
-		<div id="pipower-temperature-graph"></div>
+		<div id="pipower-temperature-graph" class="pipower-graph"></div>
 	</div>
 	<table class="table table-bordered table-hover">
         <thead>
@@ -63,38 +63,39 @@
 
 <div class="row-fluid">
 	<h3>Fans:</h3>
+    <!-- TODO: Chart for fan speed -->
 	<table class="table table-bordered table-hover">
         <thead>
             <tr>
                 <th>Fan</th>
                 <th>Speed</th>
+                <th>Set Speed</th>
                 <th>Control</th>
-                <th>Speed</th>
             <tr>
         </thead>
         <tbody>
             <tr data-bind="with: fan0">
                 <td data-bind="text: caption"></td>
                 <td data-bind="text: speed" style="width:10%"></td>
-                <td>
-                    <button class="btn btn-block control-box" data-bind="click: on">On</button>
-                    <button class="btn btn-block control-box" data-bind="click: off">Off</button>
-                </td>
                 <td style="width:30%">
                     <select class="btn btn-block control-box" data-bind="options: speedOptions, value: selectedSpeedOption"></select>
                     <button class="btn btn-block control-box" data-bind="click: update">Set</button>
+                </td>
+                <td>
+                    <button class="btn btn-block control-box" data-bind="click: on">On</button>
+                    <button class="btn btn-block control-box" data-bind="click: off">Off</button>
                 </td>
             </tr>
             <tr data-bind="with: fan1">
                 <td data-bind="text: caption"></td>
                 <td data-bind="text: speed" style="width:10%"></td>
-                <td>
-                    <button class="btn btn-block control-box" data-bind="click: on">On</button>
-                    <button class="btn btn-block control-box" data-bind="click: off">Off</button>
-                </td>
                 <td style="width:30%">
                     <select class="btn btn-block control-box" data-bind="options: speedOptions, value: selectedSpeedOption"></select>
                     <button class="btn btn-block control-box" data-bind="click: update">Set</button>
+                </td>
+                <td>
+                    <button class="btn btn-block control-box" data-bind="click: on">On</button>
+                    <button class="btn btn-block control-box" data-bind="click: off">Off</button>
                 </td>
             </tr>
         </tbody>
@@ -102,24 +103,27 @@
 </div>
 
 <!-- Lights -->
-
 <div class="row-fluid">
 	<h3>Light:</h3>
+    <div class="row-fluid">
+		<div id="pipower-light-level-graph" class="pipower-graph"></div>
+	</div>
+
 	<table class="table table-bordered table-hover">
 		<tr>
 			<td data-bind="text: settings.lightSensorCaption"></td>
-			<td data-bind="text:lightLevel.value"></td>
-			<td></td>
-            <td></td>
+			<td data-bind="text: lightLevel.value"></td>
+			<td data-bind="text: lightLevel.minValue"></td>
+            <td data-bind="text: lightLevel.maxValue"></td>
 		</tr>	
 		<tr>
 			<td>Display Backlight</td>
 			<td>On</td>
+            <td></td>
 			<td>
 				<button class="btn btn-block control-box">On</button>
 				<button class="btn btn-block control-box">Off</button>
 			</td>
-            <td></td>
 		</tr>
 	</table>
 </div>

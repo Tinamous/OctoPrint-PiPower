@@ -1,14 +1,6 @@
 /* TODO: Have your plugin's CSS files generated to here. */
 
-#pipower-power-graph {
-  height: 350px;
-  width: 100%;
-  background-image: url("../img/graph-background.png");
-  background-position: center;
-  background-repeat: no-repeat;
-}
-
-#pipower-temperature-graph {
+.pipower-graph {
   height: 350px;
   width: 100%;
   background-image: url("../img/graph-background.png");

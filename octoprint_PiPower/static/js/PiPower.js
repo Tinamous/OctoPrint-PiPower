@@ -5,6 +5,7 @@
  * License: CC-SA 4.0
  */
 $(function() {
+    // View model for Fan control/monitor
 	function PiPowerFanViewModel(caption, fanId) {
         var self = this;
 
@@ -49,6 +50,7 @@ $(function() {
 		return self;
 	}
 
+	// View model for GPIO control/monitor
 	function PiPowerGPIOViewModel(pin) {
 		var self = this;
 		// BCM/GPIO number
@@ -99,7 +101,7 @@ $(function() {
 		return self;
 	}
 
-	// View model for measured values (temperature, voltage, current etc).
+	// View model for measured values (temperature, voltage, current, light etc).
 	function PiPowerMeasuredValueViewModel(caption, enabled) {
 		var self = this;
 		self.enabled = ko.observable(enabled);
@@ -140,6 +142,7 @@ $(function() {
 		return self;
 	}
 
+	// Main view model for the Pi Power Plugin
     function PiPowerViewModel(parameters) {
         var self = this;
 
@@ -160,7 +163,7 @@ $(function() {
 		// V & I only, makes plotting difficult otherwise.
 		self.powerMeasurements = [self.voltage, self.current];
 
-		self.lightLevel = new PiPowerMeasuredValueViewModel("Light Level")
+		self.lightLevel = new PiPowerMeasuredValueViewModel("Light Level", true)
 
 		self.fan0 = new PiPowerFanViewModel("F0", 0);
 		self.fan1 = new PiPowerFanViewModel("F1", 1);
@@ -201,8 +204,17 @@ $(function() {
             });
             self.temperatureSensors(temperatureSensors);
 
-			self.updateTemperaturePlot();
-			self.updatePowerPlot();
+            self.updatePlots();
+        };
+
+		// ===================================================
+        // Tab selected
+        // ===================================================
+        self.onAfterTabChange = function(current, previous) {
+            if (current != "#tab_plugin_pipower") {
+                return;
+            }
+            self.updatePlots();
         };
 
 		// ===================================================
@@ -219,14 +231,17 @@ $(function() {
 
 			self.lightLevel.setValue(data.lightLevel);
 
-			self.fan0.speed(data.fan0Speed);
-			self.fan1.speed(data.fan1Speed);
+            self.updateFans();
 
             self.updateGPIO(data);
 
-			self.updateTemperaturePlot();
-			self.updatePowerPlot();
+            self.updatePlots();
 	    };
+
+        self.updateFans = function(data) {
+			self.fan0.speed(data.fan0Speed);
+			self.fan1.speed(data.fan1Speed);
+        };
 
         self.updateGPIO = function(data) {
 			for (var gpioRead = 0; gpioRead < data.gpioValues.length; gpioRead++) {
@@ -275,6 +290,10 @@ $(function() {
                 console.error("Error setting the power values. Error: " + e);
             }
         };
+
+        // =================================================
+        // Charting
+        // =================================================
 
 		// Stolen from temperature.js
 		self.temperaturePlotOptions = {
@@ -336,7 +355,7 @@ $(function() {
 					}
                 });
 
-                self.temperaturePlotOptions.yaxis.max = Math.max.apply(null, maxTemps) * 1.1;
+                self.temperaturePlotOptions.yaxis.max = Math.max.apply(null, maxTemps) * 1.2;
                 $.plot(graph, data, self.temperaturePlotOptions);
             }
         };
@@ -417,6 +436,121 @@ $(function() {
                 $.plot(graph, data, self.powerPlotOptions);
             }
         };
+
+		self.fansPlotOptions = {
+            yaxis: {
+                min: 0,
+                max: 100,
+                ticks: 10
+            },
+			yaxes: [{
+				// Fan 1
+                min: 0,
+                max: 100,
+                ticks: 5
+            },{
+				// Fan 2
+                min: 0,
+                max: 100,
+                ticks: 5,
+            }],
+            xaxis: {
+                mode: "time",
+                minTickSize: [2, "minute"],
+                tickFormatter: function(val, axis) {
+                    if (val == undefined || val == 0)
+                        return ""; // we don't want to display the minutes since the epoch if not connected yet ;)
+
+                    // current time in milliseconds in UTC
+                    var timestampUtc = Date.now();
+
+                    // calculate difference in milliseconds
+                    var diff = timestampUtc - val;
+
+                    // convert to minutes
+                    var diffInMins = Math.round(diff / (60 * 1000));
+                    if (diffInMins == 0)
+                        return gettext("just now");
+                    else
+                        return "- " + diffInMins + " " + gettext("min");
+                }
+            },
+            legend: {
+                position: "sw",
+                noColumns: 2,
+                backgroundOpacity: 0
+            }
+        };
+
+		self.updateFansPlot = function() {
+		    // TODO: Implement
+        }
+
+		self.lightPlotOptions = {
+            yaxis: {
+                min: 0,
+                max: 100,
+                ticks: 10
+            },
+            xaxis: {
+                mode: "time",
+                minTickSize: [2, "minute"],
+                tickFormatter: function(val, axis) {
+                    if (val == undefined || val == 0)
+                        return ""; // we don't want to display the minutes since the epoch if not connected yet ;)
+
+                    // current time in milliseconds in UTC
+                    var timestampUtc = Date.now();
+
+                    // calculate difference in milliseconds
+                    var diff = timestampUtc - val;
+
+                    // convert to minutes
+                    var diffInMins = Math.round(diff / (60 * 1000));
+                    if (diffInMins == 0)
+                        return gettext("just now");
+                    else
+                        return "- " + diffInMins + " " + gettext("min");
+                }
+            },
+            legend: {
+                position: "sw",
+                noColumns: 2,
+                backgroundOpacity: 0
+            }
+        };
+
+		self.updateLightPlot = function() {
+            // console.log("Updating Light Level chart");
+            var graph = $("#pipower-light-level-graph");
+            if (graph.length) {
+                var data = [];
+
+                var lightMeasurement = self.lightLevel;
+
+                if (lightMeasurement.enabled())
+                {
+                    var actuals = lightMeasurement.valueHistory;
+
+                    data.push({
+                        label: lightMeasurement.caption(),
+                        //color: 'red',
+                        data: actuals,
+                    });
+
+                    self.lightPlotOptions.yaxis.max = lightMeasurement.maxValue() * 1.2;
+                }
+
+                $.plot(graph, data, self.lightPlotOptions);
+            }
+        };
+
+		self.updatePlots = function() {
+            self.updateTemperaturePlot();
+            self.updatePowerPlot();
+            self.updateFansPlot();
+            self.updateLightPlot();
+        }
 	};
 
     // view model class, parameters for constructor, container to bind to
