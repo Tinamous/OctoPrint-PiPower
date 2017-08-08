@@ -44,9 +44,11 @@ class PiPowerHat:
 		self._settings = None
 
 		# PWM Fan control
+		# The requested speed of the fan
 		# Default to 100% fan speed
 		self._fanSpeeds = [100,100]
-		self._fanStates = [0,0]
+		# If the fan is on or off
+		self._fanStates = [False,False]
 		self._fan_pwm_pins = [18, 13]
 		self._fan_pwm = []
 
@@ -193,10 +195,11 @@ class PiPowerHat:
 				currentMilliAmps = round(power['currentMilliAmps'],2),
 				powerWatts = round(power['power'],2),
 				lightLevel = lightLevel,
-				fan0On= self._fanStates[0],
-				fan0Speed = self._fanSpeeds[0],
-				fan1On= self._fanStates[1],
-				fan1Speed = self._fanSpeeds[1],
+				fans = [
+					self.get_fan_details(0),
+					self.get_fan_details(1),
+					dict(fanId=2, state=True, speed=100, setSpeed=100),
+				],
 				leds = leds,
 				gpioValues = gpio_pin_values
 				)
@@ -304,6 +307,7 @@ class PiPowerHat:
 		try:
 			import RPi.GPIO as GPIO
 
+			# GPIO Library PWM controller for the fan
 			pwm = self._fan_pwm[fan_id]
 
 			if state:
@@ -393,3 +397,16 @@ class PiPowerHat:
 			GPIO.output(pin, 1)
 		else:
 			GPIO.output(pin, 0)
+
+	def get_fan_speed(self, fan_id):
+		# We don't have a way to measure the actual fan speed.
+		# Just report back the set speed if it is on
+		# or 0 it is not
+
+		if self._fanStates[fan_id]:
+			return  self._fanSpeeds[fan_id]
+		else:
+			return 0
+
+	def get_fan_details(self, fan_id):
+		return dict(fanId=0, state=self._fanStates[fan_id], speed=self.get_fan_speed(fan_id), setSpeed=self._fanSpeeds[fan_id]);

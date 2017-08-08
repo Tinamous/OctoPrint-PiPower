@@ -184,7 +184,7 @@ class PipowerPlugin(octoprint.plugin.StartupPlugin,
 		self._logger.info("Started timer. Interval: {0}s".format(interval))
 
 	def getPiPowerValues(self):
-		self._logger.info("Getting values from PiPower...")
+		#self._logger.debug("Getting values from PiPower...")
 
 		try:
 			pluginData = self._powerHat.getPiPowerValues(self._settings)

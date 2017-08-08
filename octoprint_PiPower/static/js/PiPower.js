@@ -12,8 +12,7 @@ $(function() {
         self.caption = ko.observable(caption);
         self.fanId = fanId;
         self.state = ko.observable(false);
-        // Currently selected speed to shpw
-        self.speed = ko.observable();
+        self.speed = new PiPowerMeasuredValueViewModel(caption, true);
         self.speedOptions = ko.observableArray([20, 40, 60, 80, 100]);
         self.selectedSpeedOption = ko.observable(100);
 
@@ -37,14 +36,11 @@ $(function() {
         };
 
         self.update = function () {
-            self.speed(self.selectedSpeedOption());
-
         	var payload = {
                 fanId: self.fanId,
-				speed: self.speed(),
+				speed: self.selectedSpeedOption(),
             };
             OctoPrint.simpleApiCommand("pipower", "setFanSpeed", payload, {});
-
         };
 
 		return self;
@@ -115,8 +111,8 @@ $(function() {
 		self.setValue = function(value) {
             self.value(value);
             self.valueHistory.push([Date.now(), value]);
-            // 60 points per minute, 6 hour history
-            if (self.valueHistory.length > 6 * 60) {
+            // 30 points per minute, 24 hour history (assumes 2s refresh of data)
+            if (self.valueHistory.length > 24 * 30) {
                 self.valueHistory.shift(0, 1);
             }
 
@@ -167,6 +163,7 @@ $(function() {
 
 		self.fan0 = new PiPowerFanViewModel("F0", 0);
 		self.fan1 = new PiPowerFanViewModel("F1", 1);
+		self.fans = ko.observableArray([self.fan0, self.fan1]);
 
 		// This needs to be initialized from settings.gpioOptions
 		self.gpioOptions = ko.observableArray([]);
@@ -231,7 +228,7 @@ $(function() {
 
 			self.lightLevel.setValue(data.lightLevel);
 
-            self.updateFans();
+            self.updateFans(data);
 
             self.updateGPIO(data);
 
@@ -239,8 +236,14 @@ $(function() {
 	    };
 
         self.updateFans = function(data) {
-			self.fan0.speed(data.fan0Speed);
-			self.fan1.speed(data.fan1Speed);
+
+            for (var fanId = 0; fanId < 2; fanId++) {
+                var fan = self.fans()[fanId];
+                var fanDetails = data.fans[fanId];
+
+                fan.speed.setValue(fanDetails.speed);
+			    fan.state(fanDetails.state);
+            }
         };
 
         self.updateGPIO = function(data) {
@@ -438,20 +441,16 @@ $(function() {
         };
 
 		self.fansPlotOptions = {
-            yaxis: {
-                min: 0,
-                max: 100,
-                ticks: 10
-            },
 			yaxes: [{
 				// Fan 1
-                min: 0,
-                max: 100,
+                // -ve lower so the line shows at 0
+                min: -5,
+                max: 110,
                 ticks: 5
             },{
 				// Fan 2
-                min: 0,
-                max: 100,
+                min: -5,
+                max: 110,
                 ticks: 5,
             }],
             xaxis: {
@@ -483,7 +482,27 @@ $(function() {
         };
 
 		self.updateFansPlot = function() {
-		    // TODO: Implement
+            //console.log("Updating fans chart");
+            var graph = $("#pipower-fans-graph");
+            if (graph.length) {
+                var data = [];
+
+                _.each(self.fans(), function(fan) {
+
+					if (fan.speed.enabled())
+					{
+						var actuals = fan.speed.valueHistory;
+
+						data.push({
+							label: fan.caption(),
+							//color: 'red',
+							data: actuals
+						});
+					}
+                });
+
+                $.plot(graph, data, self.fansPlotOptions);
+            }
         }
 
 		self.lightPlotOptions = {

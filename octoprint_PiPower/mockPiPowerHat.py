@@ -18,8 +18,10 @@ import logging.handlers
 class MockPiPowerHat:
 	def __init__(self):
 		self._logger = logging.getLogger(__name__)
-		self._fanSpeeds = [0,0]
-		self._fanStates = [0,0]
+		# The requested speed of the fan
+		self._fanSpeeds = [100,100]
+		# If the fan is on or off
+		self._fanStates = [False,False]
 		self._settings = None
 
 	def initialize(self, settings):
@@ -51,14 +53,16 @@ class MockPiPowerHat:
 
 		return dict(
 			temperatures=measured_temperatures,
-			voltage = round(voltage,1),
-			currentMilliAmps = round(currentMilliAmps,1),
-			powerWatts = round(voltage * (currentMilliAmps/1000),0),
-			lightLevel = self.randrange_float(0, 100, 1),
-			fan0On= self._fanStates[0],
-			fan0Speed = self._fanSpeeds[0],
-			fan1On= self._fanStates[1],
-			fan1Speed = self._fanSpeeds[1],
+			voltage=round(voltage,1),
+			currentMilliAmps=round(currentMilliAmps,1),
+			powerWatts=round(voltage * (currentMilliAmps/1000),0),
+			lightLevel=self.randrange_float(0, 100, 1),
+			fans = [
+				self.get_fan_details(0),
+				self.get_fan_details(1),
+				# Fan 3 is always on
+				dict(fanId=2, state=True, speed=100, setSpeed=100),
+			],
 			leds = "on",
 			gpioValues = gpio_pin_values
 			)
@@ -81,10 +85,35 @@ class MockPiPowerHat:
 	def randrange_float(self, start, stop, step):
 		return random.randint(0, int((stop - start) / step)) * step + start
 
+	def set_fan(self, fan_id, state, speed):
+		self._logger.info("Setting fan: {0}, State: {1} Speed: {2}".format(fan_id, state, speed))
+		previousSpeed = self._fanSpeeds[fan_id]
+		self._fanSpeeds[fan_id] = speed
+		self._fanStates[fan_id] = state
+		# No other implementation...
+
 	def set_fan_state(self, fan_id, state):
 		self._logger.warn("****Setting fan: {0}, State: {1}".format(fan_id, state))
-		self._fanStates[fan_id] = state
+		speed = self._fanSpeeds[fan_id];
+
+		self.set_fan(fan_id, state, speed)
 
 	def set_fan_speed(self, fan_id, speed):
 		self._logger.warn("****Setting fan: {0}, Speed: {1}".format(fan_id, speed))
-		self._fanSpeeds[fan_id] = speed
+		state = self._fanStates[fan_id]
+
+		self.set_fan(fan_id, state, speed)
+
+	def get_fan_speed(self, fan_id):
+		# We don't have a way to measure the actual fan speed.
+		# Just report back the set speed if it is on
+		# or 0 it is not
+
+		if self._fanStates[fan_id]:
+			return  self._fanSpeeds[fan_id]
+		else:
+			return 0
+
+	def get_fan_details(self, fan_id):
+		return dict(fanId=0, state=self._fanStates[fan_id], speed=self.get_fan_speed(fan_id), setSpeed=self._fanSpeeds[fan_id]);
+
