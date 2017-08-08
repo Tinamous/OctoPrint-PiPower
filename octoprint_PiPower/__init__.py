@@ -66,6 +66,16 @@ class PipowerPlugin(octoprint.plugin.StartupPlugin,
 				dict(sensorId="", caption="External Air"),
 				dict(sensorId="", caption="Extra"),
 			],
+			fans = [
+				dict(fanId=0,
+					enabled=True,
+					caption="3 Pin Small Fan",
+					pwmFrequency=200),
+				dict(fanId=1,
+				     enabled=True,
+				     caption="4 Pin Fan",
+				     pwmFrequency=200),
+			],
 			fan0Caption="Cooling Fan",
 			fan1Caption="Pi Fan",
 			pwmFrequency=200,
@@ -156,7 +166,7 @@ class PipowerPlugin(octoprint.plugin.StartupPlugin,
 	# }
 	def on_api_command(self, command, data):
 		if command == "setGPIO":
-			self._logger.info("setGPID called. Options: {Options}".format(**data))
+			self._logger.info("setGPID called. Pin: {0}, Value: {1}".format(data['pin'], data['value']))
 			self._powerHat.set_gpio(data['pin'], data['value'])
 		elif command == "setFanState":
 			self._logger.info("setFanState called.")

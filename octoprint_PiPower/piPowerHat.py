@@ -59,6 +59,12 @@ class PiPowerHat:
 		self._tsl2561  = None
 		self._has_light_sensor = False
 
+		# Initialzie a 40 pin array for IO set values
+		# ignore 0 as their is no pin 0
+		self._gpioPinSetValue = []
+		for pin in range(4, 40):
+			self._gpioPinSetValue.append(0)
+
 	def initialize(self, settings):
 		self._logger.setLevel(logging.INFO)
 		self._logger.info("PiPowerHat initializing")
@@ -186,9 +192,6 @@ class PiPowerHat:
 			self._logger.debug("Reading GPIOs.")
 			gpio_pin_values = self.read_gpio_values(settings)
 
-			self._logger.debug("Updating LED control value.")
-			leds = "off"
-
 			return dict(
 				temperatures= measured_temperatures,
 				voltage = round(power['voltage'],2),
@@ -198,9 +201,9 @@ class PiPowerHat:
 				fans = [
 					self.get_fan_details(0),
 					self.get_fan_details(1),
+					# Fan 3 is always on
 					dict(fanId=2, state=True, speed=100, setSpeed=100),
 				],
-				leds = leds,
 				gpioValues = gpio_pin_values
 				)
 		except Exception as e:
@@ -341,16 +344,30 @@ class PiPowerHat:
 
 		self.set_fan(fan_id, state, speed)
 
+	def get_fan_speed(self, fan_id):
+		# We don't have a way to measure the actual fan speed.
+		# Just report back the set speed if it is on
+		# or 0 it is not
+
+		if self._fanStates[fan_id]:
+			return  self._fanSpeeds[fan_id]
+		else:
+			return 0
+
+	def get_fan_details(self, fan_id):
+		return dict(fanId=0, state=self._fanStates[fan_id], speed=self.get_fan_speed(fan_id), setSpeed=self._fanSpeeds[fan_id]);
 	# ===========================================
 	# Light Sensor
 	# ===========================================
 	def read_light_level(self, settings):
 
 		if not self._has_light_sensor:
-			return 64
+			return -1
 
 		from tsl2561 import TSL2561
-		return self._tsl2561.lux()
+		lux = self._tsl2561.lux()
+		self._logger.info("Lux measured: {0}".format(lux))
+		return lux
 
 	# ===========================================
 	# GPIO Pins
@@ -361,7 +378,7 @@ class PiPowerHat:
 		try:
 			# import RPi.GPIO as GPIO
 			for gpio_option in settings.get(["gpioOptions"]):
-				self._logger.debug("Getting GPIO for: {0}.".format(gpio_option))
+				#self._logger.debug("Getting GPIO for: {0}.".format(gpio_option))
 				pin = gpio_option["pin"]
 				value = self.get_gpio_pin_value(gpio_option)
 				gpio_pin_values.append(dict(pin=pin, value=value))
@@ -375,17 +392,18 @@ class PiPowerHat:
 		# Disabled = 0, Input = 1, Input pull down = 2, Input pull up = 3, Output = 4
 
 		mode = int(gpio_pin_options["mode"])
+		pin = int(gpio_pin_options["pin"])
 
 		if mode == 0:
 			# Disabled
 			return None
 		elif mode == 4:
 			# Output
-			return ""  # Unknown
+			return self._gpioPinSetValue[pin]
 		else:
 			# Using BCM pin nuimber
 			import RPi.GPIO as GPIO
-			return GPIO.input(gpio_pin_options["pin"])
+			return GPIO.input(pin)
 
 	def set_gpio(self, pin, state):
 		self._logger.info("Setting GPIO Pin: {0}, State: {1}".format(pin, state))
@@ -393,20 +411,13 @@ class PiPowerHat:
 
 		# TODO: Ensure the pin is defined as output.
 
+		value = 0
 		if state:
-			GPIO.output(pin, 1)
+			value = 1
 		else:
-			GPIO.output(pin, 0)
+			value = 0
 
-	def get_fan_speed(self, fan_id):
-		# We don't have a way to measure the actual fan speed.
-		# Just report back the set speed if it is on
-		# or 0 it is not
+		GPIO.output(pin, value)
+		# record the value set to display in the UI.
+		self._gpioPinSetValue[pin] = value
 
-		if self._fanStates[fan_id]:
-			return  self._fanSpeeds[fan_id]
-		else:
-			return 0
-
-	def get_fan_details(self, fan_id):
-		return dict(fanId=0, state=self._fanStates[fan_id], speed=self.get_fan_speed(fan_id), setSpeed=self._fanSpeeds[fan_id]);

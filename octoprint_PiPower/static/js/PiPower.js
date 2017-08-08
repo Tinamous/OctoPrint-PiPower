@@ -58,7 +58,8 @@ $(function() {
 		// BCM/GPIO number
 		self.pin = ko.observable(pin);
 		self.caption = ko.observable("");
-		self.value = ko.observable();
+		self.value = new PiPowerMeasuredValueViewModel(pin, true);
+		//self.value = ko.observable();
 		// Disabled = 0, Input = 1, Input pull down = 2, Input pull up = 3, Output = 4
 		self.mode = ko.observable(0);
 
@@ -68,6 +69,22 @@ $(function() {
             }
             return false;
         }, this);
+
+		self.valueText = ko.computed(function() {
+		    // Disabled
+		    if (self.mode() == 0) {
+		        return "";
+            }
+
+		    var value = self.value.value();
+		    if (value == 0) {
+		        return "LOW";
+            } else if (value == 1) {
+		        return "HIGH";
+            } else {
+		        return "?";
+            }
+        });
 
 		self.modeText = ko.computed(function() {
 		    mode = parseInt(self.mode());
@@ -90,21 +107,35 @@ $(function() {
 		self.setSettings = function(settings) {
 		    self.caption(settings.caption());
             self.mode(settings.mode());
+
+            // Disabled if mode is 0
+            self.value.enabled(parseInt(self.mode()) != 0 );
+            self.value.caption(self.caption());
         };
 
 		self.setLow = function() {
 			console.log("GPIO Set Low");
+			self.setLevel(0);
 		};
 
 		self.setHigh = function() {
 			console.log("GPIO Set High");
+			self.setLevel(1);
 		};
+
+		self.setLevel = function(value) {
+            var payload = {
+                pin: self.pin(),
+				value: value,
+            };
+            OctoPrint.simpleApiCommand("pipower", "setGPIO", payload, {});
+        };
 
 		return self;
 	}
 
 	// View model for measured values (temperature, voltage, current, light etc).
-	function PiPowerMeasuredValueViewModel(caption, enabled) {
+	function PiPowerMeasuredValueViewModel(caption, enabled, unit) {
 		var self = this;
 		self.enabled = ko.observable(enabled);
 		self.caption = ko.observable(caption);
@@ -113,6 +144,7 @@ $(function() {
 		self.maxValue = ko.observable(null);
 		self.minValue = ko.observable(null);
 		self.valueHistory = [];
+		self.unit = ko.observable(unit);
 
 		self.setValue = function(value) {
             self.value(value);
@@ -155,15 +187,17 @@ $(function() {
 
         self.temperatureSensors = ko.observableArray([]);
 
-		self.voltage = new PiPowerMeasuredValueViewModel("Voltage", true);
-		self.current = new PiPowerMeasuredValueViewModel("Current", true);
-		self.power = new PiPowerMeasuredValueViewModel("Power", true);
-        self.currentFiveVoltEquivelant = new PiPowerMeasuredValueViewModel("Current", true);
-		self.currentThreeVoltThreeEquivelant = new PiPowerMeasuredValueViewModel("Current", true);
+		self.voltage = new PiPowerMeasuredValueViewModel("Voltage", true, "Volts");
+		self.current = new PiPowerMeasuredValueViewModel("Current", true, "mA");
+		self.power = new PiPowerMeasuredValueViewModel("Power", true, "Watts");
+        self.currentFiveVoltEquivelant = new PiPowerMeasuredValueViewModel("Equivalent current @5V", true, "eq. mA");
+		self.currentThreeVoltThreeEquivelant = new PiPowerMeasuredValueViewModel("Equivalent current @3v3", true, "eq. mA");
 
 		//self.powerMeasurements = [self.voltage, self.current, self.power];
-		// V & I only, makes plotting difficult otherwise.
+		// For charting, V & I only, makes plotting difficult otherwise.
 		self.powerMeasurements = [self.voltage, self.current];
+		// For tabular display.
+		self.powerMeasurementsTable = [self.voltage, self.current, self.power, self.currentFiveVoltEquivelant, self.currentThreeVoltThreeEquivelant];
 
 		self.lightLevel = new PiPowerMeasuredValueViewModel("Light Level", true)
 
@@ -182,6 +216,7 @@ $(function() {
 			console.log("PiPower Settings: " + self.settings );
 
             // Fans
+            // TODO: use self.settings.fans...
 			self.fan0.caption(self.settings.fan0Caption());
 			self.fan1.caption(self.settings.fan1Caption());
 
@@ -260,6 +295,9 @@ $(function() {
 			        var gpioOption = self.gpioOptions()[option];
 
 			        if (gpio.pin == gpioOption.pin()) {
+			            // 1,0 or maybe something else!
+			            gpioOption.value.setValue(gpio.value);
+			            /*
 			            if (gpio.value == 1) {
                             gpioOption.value("HIGH")
                         } else if (gpio.value == 0) {
@@ -267,6 +305,7 @@ $(function() {
                         } else {
 			                gpioOption.value("?")
                         }
+                        */
                     }
                 }
             }
@@ -447,12 +486,12 @@ $(function() {
                 // -ve lower so the line shows at 0
                 min: -10,
                 max: 110,
-                ticks: 5
+                ticks: 10
             },{
 				// Fan 2
                 min: -10,
                 max: 110,
-                ticks: 5,
+                ticks: 10,
             }],
             xaxis: {
                 mode: "time",
@@ -504,7 +543,7 @@ $(function() {
 
                 $.plot(graph, data, self.fansPlotOptions);
             }
-        }
+        };
 
 		self.lightPlotOptions = {
             yaxis: {
@@ -565,11 +604,70 @@ $(function() {
             }
         };
 
+		self.GPIOPlotOptions = {
+			yaxes: {
+				// GPIO is 1 or 0, add a bit to put it in the middle of the chart.
+                min: -1,
+                max: 2,
+                ticks: 10,
+            },
+            xaxis: {
+                mode: "time",
+                minTickSize: [2, "minute"],
+                tickFormatter: function(val, axis) {
+                    if (val == undefined || val == 0)
+                        return ""; // we don't want to display the minutes since the epoch if not connected yet ;)
+
+                    // current time in milliseconds in UTC
+                    var timestampUtc = Date.now();
+
+                    // calculate difference in milliseconds
+                    var diff = timestampUtc - val;
+
+                    // convert to minutes
+                    var diffInMins = Math.round(diff / (60 * 1000));
+                    if (diffInMins == 0)
+                        return gettext("just now");
+                    else
+                        return "- " + diffInMins + " " + gettext("min");
+                }
+            },
+            legend: {
+                position: "sw",
+                noColumns: 2,
+                backgroundOpacity: 0
+            }
+        };
+
+		self.updateGPIOPlot = function() {
+            var graph = $("#pipower-gpio-graph");
+            if (graph.length) {
+                var data = [];
+
+                _.each(self.gpioOptions(), function(gpioOption) {
+
+					if (gpioOption.value.enabled())
+					{
+						var actuals = gpioOption.value.valueHistory;
+
+						data.push({
+							label: gpioOption.caption(),
+							//color: 'red',
+							data: actuals
+						});
+					}
+                });
+
+                $.plot(graph, data, self.GPIOPlotOptions);
+            }
+        }
+
 		self.updatePlots = function() {
             self.updateTemperaturePlot();
             self.updatePowerPlot();
             self.updateFansPlot();
             self.updateLightPlot();
+            self.updateGPIOPlot();
         }
 	};
 

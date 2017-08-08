@@ -24,48 +24,62 @@ class MockPiPowerHat:
 		self._fanStates = [False,False]
 		self._settings = None
 
+		# Initialzie a 40 pin array for IO set values
+		# ignore 0 as their is no pin 0
+		self._gpioPinSetValue = []
+		for pin in range(4, 40):
+			self._gpioPinSetValue.append(0)
+
 	def initialize(self, settings):
 		self._logger.setLevel(logging.DEBUG)
 		self._logger.warn("MockPiPowerHat. GPIO not initialized")
 		self._settings = settings
 
-	def getTemperatureSensors(self):
-		return ['', '28-000007538f5b', '28-0000070e4078', '28-0000070e3270', '28-000007538a2b']
-
+	# ===========================================
+	# Power
+	# ===========================================
 	def getPiPowerValues(self, settings):
 		#self._logger.debug("Making up values for debug")
 
-		settingsKey = "pcbTemperatureSensorId";
-		sensor = settings.get([settingsKey])
+		#settingsKey = "pcbTemperatureSensorId";
+		#sensor = settings.get([settingsKey])
 		#self._logger.warn(settingsKey + " == " + sensor)
+
+		measured_temperatures = self.read_temperatures(settings)
 
 		# make some values up.
 		voltage = self.randrange_float(11, 13, 0.01)
-		currentMilliAmps = self.randrange_float(600, 1500, 0.1)
+		currentMilliAmps = self.randrange_float(900, 1200, 0.1)
 
-		gpio_pin_values = []
-		gpio_pin_values.append(dict(pin="16", value=1))
-		gpio_pin_values.append(dict(pin="26", value=0))
-		gpio_pin_values.append(dict(pin="998", value="Disabled"))
-		gpio_pin_values.append(dict(pin="999", value=""))
+		lightLevel = self.read_light_level(settings)
 
-		measured_temperatures = self.read_temperatures(settings)
+		gpio_pin_values = self.read_gpio_values(settings)
+		#gpio_pin_values = []
+		#gpio_pin_values.append(dict(pin="16", value=))
+		#gpio_pin_values.append(dict(pin="26", value=self.randrange_float(0, 1, 1)))
+		#gpio_pin_values.append(dict(pin="998", value="Disabled"))
+		#gpio_pin_values.append(dict(pin="999", value=""))
 
 		return dict(
 			temperatures=measured_temperatures,
 			voltage=round(voltage,1),
 			currentMilliAmps=round(currentMilliAmps,1),
 			powerWatts=round(voltage * (currentMilliAmps/1000),0),
-			lightLevel=self.randrange_float(0, 100, 1),
+			lightLevel=lightLevel,
 			fans = [
 				self.get_fan_details(0),
 				self.get_fan_details(1),
 				# Fan 3 is always on
 				dict(fanId=2, state=True, speed=100, setSpeed=100),
 			],
-			leds = "on",
 			gpioValues = gpio_pin_values
 			)
+
+	# ===========================================
+	# Temperature
+	# ===========================================
+	def getTemperatureSensors(self):
+		return ['', '28-000007538f5b', '28-0000070e4078', '28-0000070e3270', '28-000007538a2b']
 
 	def read_temperatures(self, settings):
 		temperatures = []
@@ -82,9 +96,9 @@ class MockPiPowerHat:
 		temperature = random.randint(0, 1000) * 0.1 + 20
 		return temperature
 
-	def randrange_float(self, start, stop, step):
-		return random.randint(0, int((stop - start) / step)) * step + start
-
+	# ===========================================
+	# Fans
+	# ===========================================
 	def set_fan(self, fan_id, state, speed):
 		self._logger.info("Setting fan: {0}, State: {1} Speed: {2}".format(fan_id, state, speed))
 		previousSpeed = self._fanSpeeds[fan_id]
@@ -117,3 +131,62 @@ class MockPiPowerHat:
 	def get_fan_details(self, fan_id):
 		return dict(fanId=0, state=self._fanStates[fan_id], speed=self.get_fan_speed(fan_id), setSpeed=self._fanSpeeds[fan_id]);
 
+	# ===========================================
+	# Light Sensor
+	# ===========================================
+	def read_light_level(self, settings):
+		return self.randrange_float(0, 255, 1)
+
+	# ===========================================
+	# GPIO Pins
+	# ===========================================
+	def read_gpio_values(self, settings):
+		gpio_pin_values = []
+
+		try:
+			# import RPi.GPIO as GPIO
+			for gpio_option in settings.get(["gpioOptions"]):
+				#self._logger.debug("Getting GPIO for: {0}.".format(gpio_option))
+				pin = gpio_option["pin"]
+				value = self.get_gpio_pin_value(gpio_option)
+				gpio_pin_values.append(dict(pin=pin, value=value))
+		except Exception as e:
+			self._logger.exception("Failed to read GPIO pins. Exception: {0}".format(e))
+
+		return gpio_pin_values
+
+	def get_gpio_pin_value(self, gpio_pin_options):
+		# Disabled = 0, Input = 1, Input pull down = 2, Input pull up = 3, Output = 4
+
+		mode = int(gpio_pin_options["mode"])
+		pin = int(gpio_pin_options["pin"])
+
+		if mode == 0:
+			# Disabled
+			return None
+		elif mode == 4:
+			# Output
+			return self._gpioPinSetValue[pin]
+		else:
+			# Using BCM pin nuimber
+			return self.randrange_float(0, 1, 1)
+
+
+	def set_gpio(self, pin, state):
+		self._logger.info("Setting GPIO Pin: {0}, State: {1}".format(pin, state))
+
+		# TODO: Ensure the pin is defined as output.
+
+		if state:
+			value = 1
+		else:
+			value = 0
+
+		# record the value set to display in the UI.
+		self._gpioPinSetValue[pin] = value
+
+	# ===========================================
+	# Helpers
+	# ===========================================
+	def randrange_float(self, start, stop, step):
+		return random.randint(0, int((stop - start) / step)) * step + start

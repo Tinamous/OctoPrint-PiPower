@@ -1,3 +1,4 @@
+<!-- Power -->
 <div class="row-fluid">
 	<h3>Power:</h3>
 	<div class="row-fluid">
@@ -5,36 +6,28 @@
 	</div>
 
 	<table class="table table-bordered table-hover">
-		<tr>
-			<td>Voltage</td>
-			<td data-bind="text:voltage.value"></td>
-			<td>Volts</td>
-		</tr>
-		<tr>
-			<td>Current</td> 
-			<td data-bind="text:current.value"></td>
-			<td>mA</td> 
-		</tr>
-		<tr>
-			<td>Power</td>
-			<td data-bind="text:power.value"></td>
-			<td>Watts</td> 
-		</tr>
-		<tr>
-			<td>Equivalent current @5V</td>
-			<td data-bind="text:currentFiveVoltEquivelant.value"></td>
-			<td>mA</td>
-		</tr>
-		<tr>
-			<td>Equivalent current @3v3</td>
-			<td data-bind="text:currentThreeVoltThreeEquivelant.value"></td>
-			<td>mA</td>
-		</tr>
+            <thead>
+            <tr data-bind="with: voltage">
+                <th>Voltage</th>
+                <th>Value</th>
+                <th>Min</th>
+                <th>Max</th>
+                <th>Unit</th>
+            </tr>
+        </thead>
+        <tbody data-bind="foreach: powerMeasurementsTable">
+            <tr>
+                <td data-bind="text: caption"></td>
+                <td data-bind="text: value"></td>
+                <td data-bind="text: minValue"></td>
+                <td data-bind="text: maxValue"></td>
+                <td data-bind="text: unit"></td>
+            </tr>
+        </tbody>
 	</table>
 </div>
 
 <!-- Temperatures -->
-
 <div class="row-fluid">
 	<h3>Temperatures:</h3>
 	<div class="row-fluid">
@@ -123,21 +116,24 @@
 <!-- GPIO -->
 <div class="row-fluid">
 	<h3>GPIO:</h3>
+    <div class="row-fluid">
+		<div id="pipower-gpio-graph" class="pipower-graph"></div>
+	</div>
+
 	<table class="table table-bordered table-hover">
         <thead>
 		<tr>
 			<th>Pin</th>
+            <th>Value</th>
             <th>Mode</th>
-			<th>Value</th>
 			<th>Control</th>
 		<tr>
         </thead>
         <tbody data-bind="foreach: gpioOptions">
             <tr>
-
                 <td data-bind="text: caption"></td>
+                <td data-bind="text: valueText" style="width:10%"></td>
                 <td data-bind="text: modeText"></td>
-                <td data-bind="text: value" style="width:10%"></td>
                 <td>
                     <span data-bind="visible: showControl">
                         <button class="btn btn-block control-box" data-bind="click: setLow">LOW</button>
