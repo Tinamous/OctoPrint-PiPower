@@ -111,19 +111,7 @@ class PiPowerHat:
 		except:
 			self._logger.warn("Initializing INA219 FAILED")
 
-		from tsl2561 import TSL2561
-
-		try:
-			self._has_light_sensor = False
-			self._logger.info("Initializing TSL2561 Light Sensor")
-			# See https://github.com/sim0nx/tsl2561/blob/master/tsl2561/tsl2561.py
-			# address=None, busnum=None, integration_time=TSL2561_INTEGRATIONTIME_402MS, gain=TSL2561_GAIN_1X, autogain=False, debug=False
-			self._tsl2561 = TSL2561(debug=True)
-			self._logger.info("TSL2561 Light Sensor configured")
-			self._has_light_sensor = True
-		except:
-			self._logger.warn("Initialzing TSL2561 FAILED")
-
+		self.setup_lightsensor()
 
 		# Setup GPIO Pins
 		self._logger.info("Initializing GPIO Pins")
@@ -131,6 +119,22 @@ class PiPowerHat:
 			self.setup_gpio(gpio_option)
 
 		self._logger.info("PiPowerHat. GPIO initialized")
+
+	def setup_lightsensor(self):
+
+		from tsl2561 import TSL2561
+		try:
+			self._has_light_sensor = False
+			self._logger.info("Initializing TSL2561 Light Sensor")
+			# See https://github.com/sim0nx/tsl2561/blob/master/tsl2561/tsl2561.py
+			# address=None, busnum=None, integration_time=TSL2561_INTEGRATIONTIME_402MS, gain=TSL2561_GAIN_1X, autogain=False, debug=False
+			# TODO: Allow config of gain and integration time and maybe address?
+			self._tsl2561 = TSL2561(address=TSL2561.TSL2561_ADDR_LOW)
+			self._logger.info("TSL2561 Light Sensor configured")
+			self._has_light_sensor = True
+		except Exception as e:
+			self._logger.warn("Initialzing TSL2561 FAILED. Error: {0}".format(e))
+
 
 	def setup_gpio(self, gpio_option):
 		self._logger.info("Initialize GPIO pin: {0}, assigned as: {1}".format(gpio_option['pin'], gpio_option['caption']))

@@ -58,6 +58,7 @@ class PipowerPlugin(octoprint.plugin.StartupPlugin,
 		return dict(
 			# Initialize temperature sensors to empty otherwise
 			# if sensor is not found it hangs.
+			# TODO: Inject this at on_settings_load as it won't update.
 			temperatureSensorOptions=self._temperatureSensors,
 			temperatureSensors = [
 				dict(sensorId="", caption="PSU PCB"),
@@ -122,7 +123,7 @@ class PipowerPlugin(octoprint.plugin.StartupPlugin,
 		# for details.
 		return dict(
 			PiPower=dict(
-				displayName="PiPower Plugin",
+				displayName="Pi Power",
 				displayVersion=self._plugin_version,
 
 				# version check: github repository
@@ -142,8 +143,6 @@ class PipowerPlugin(octoprint.plugin.StartupPlugin,
 			setGPIO=["pin", "value"],
 			setFanState=["fanId", "state"], # On/Off
 			setFanSpeed=["fanId", "speed"],
-			setLEDsState=["state"],
-			setLEDsMode=["mode"],
 			setDisplayBacklight=["state"],
 		)
 
@@ -165,8 +164,6 @@ class PipowerPlugin(octoprint.plugin.StartupPlugin,
 		elif command == "setFanSpeed":
 			self._logger.info("setFanSpeed called.")
 			self._powerHat.set_fan_speed(data['fanId'], data['speed'])
-		elif command == "setLEDs":
-			self._logger.info("seltLEDs called. Options: {Options}".format(**data))
 		elif command == "setDisplayBacklight":
 			self._logger.info("setDisplayBacklight called. Options: {Options}".format(**data))
 
@@ -184,22 +181,25 @@ class PipowerPlugin(octoprint.plugin.StartupPlugin,
 	def startTimer(self, interval):
 		self._readPiPowerValuesTimer = RepeatedTimer(interval, self.getPiPowerValues, None, None, True)
 		self._readPiPowerValuesTimer.start()
-		self._logger.info("Started timer. Intervale: {0}".format(interval))
+		self._logger.info("Started timer. Interval: {0}s".format(interval))
 
 	def getPiPowerValues(self):
-		#self._logger.info("Getting values from PiPower...")
+		self._logger.info("Getting values from PiPower...")
 
-		pluginData = self._powerHat.getPiPowerValues(self._settings)
+		try:
+			pluginData = self._powerHat.getPiPowerValues(self._settings)
 
-		#self._logger.info("Publishing PiPower values")
-		self._plugin_manager.send_plugin_message(self._identifier, pluginData)
+			#self._logger.info("Publishing PiPower values")
+			self._plugin_manager.send_plugin_message(self._identifier, pluginData)
 
-		return pluginData;
+			return pluginData
+		except Exception as e:
+			self._logger.warn("Errir getting the power value: {0}".format(e))
 
 # If you want your plugin to be registered within OctoPrint under a different name than what you defined in setup.py
 # ("OctoPrint-PluginSkeleton"), you may define that here. Same goes for the other metadata derived from setup.py that
 # can be overwritten via __plugin_xyz__ control properties. See the documentation for that.
-__plugin_name__ = "PiPower"
+__plugin_name__ = "Pi Power"
 
 def __plugin_load__():
 	global __plugin_implementation__
