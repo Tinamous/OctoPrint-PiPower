@@ -26,7 +26,7 @@ class PipowerPlugin(octoprint.plugin.StartupPlugin,
 					octoprint.plugin.SettingsPlugin,
                     octoprint.plugin.AssetPlugin,
                     octoprint.plugin.TemplatePlugin,
-					octoprint.plugin.SimpleApiPlugin):
+                    octoprint.plugin.SimpleApiPlugin):
 
 	def __init__(self):
 		self._readPiPowerValuesTimer = None
@@ -69,7 +69,6 @@ class PipowerPlugin(octoprint.plugin.StartupPlugin,
 			fan1Caption="Pi Fan",
 			pwmFrequency=200,
 			lightSensorCaption = "Light Level",
-			ledsCaption = "LEDs",
 			gpioOptions = [
 				dict(
 					pin=16,  #BCM Number
@@ -80,6 +79,18 @@ class PipowerPlugin(octoprint.plugin.StartupPlugin,
 				dict(
 					pin=26,  # BCM Number
 					caption="GPIO 26",
+					# Disabled = 0, Input = 1, Input pull down = 2, Input pull up = 3, Output = 4
+					mode=1,
+				),
+				dict(
+					pin=20,  # BCM Number
+					caption="GPIO 20",
+					# Disabled = 0, Input = 1, Input pull down = 2, Input pull up = 3, Output = 4
+					mode=1,
+				),
+				dict(
+					pin=21,  # BCM Number
+					caption="GPIO 21",
 					# Disabled = 0, Input = 1, Input pull down = 2, Input pull up = 3, Output = 4
 					mode=1,
 				),

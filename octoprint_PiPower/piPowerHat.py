@@ -44,13 +44,18 @@ class PiPowerHat:
 		self._settings = None
 
 		# PWM Fan control
-		self._fanSpeeds = [0,0]
+		# Default to 100% fan speed
+		self._fanSpeeds = [100,100]
 		self._fanStates = [0,0]
 		self._fan_pwm_pins = [18, 13]
 		self._fan_pwm = []
 
 		# Current monitoring with INA219
 		self._ina = None
+
+		# TODO: figure out if we have one.
+		self._tsl2561  = None
+		self._has_light_sensor = False
 
 	def initialize(self, settings):
 		self._logger.setLevel(logging.INFO)
@@ -105,6 +110,19 @@ class PiPowerHat:
 			self._logger.info("Shunt voltage: %.3f mV" % self._ina.shunt_voltage())
 		except:
 			self._logger.warn("Initializing INA219 FAILED")
+
+		from tsl2561 import TSL2561
+
+		try:
+			self._has_light_sensor = False
+			self._logger.info("Initializing TSL2561 Light Sensor")
+			# See https://github.com/sim0nx/tsl2561/blob/master/tsl2561/tsl2561.py
+			# address=None, busnum=None, integration_time=TSL2561_INTEGRATIONTIME_402MS, gain=TSL2561_GAIN_1X, autogain=False, debug=False
+			self._tsl2561 = TSL2561(debug=True)
+			self._logger.info("TSL2561 Light Sensor configured")
+			self._has_light_sensor = True
+		except:
+			self._logger.warn("Initialzing TSL2561 FAILED")
 
 
 		# Setup GPIO Pins
@@ -318,7 +336,12 @@ class PiPowerHat:
 	# Light Sensor
 	# ===========================================
 	def read_light_level(self, settings):
-		return 64
+
+		if not self._has_light_sensor:
+			return 64
+
+		from tsl2561 import TSL2561
+		return self._tsl2561.lux()
 
 	# ===========================================
 	# GPIO Pins

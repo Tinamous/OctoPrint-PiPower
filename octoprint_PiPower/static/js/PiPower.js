@@ -49,29 +49,6 @@ $(function() {
 		return self;
 	}
 
-	function PiPowerLedViewModel(caption) {
-		var self = this;
-		self.caption = ko.observable(caption);
-		self.value = ko.observable();
-
-		self.ledModes = ko.observableArray(["White", "Red", "Green", "Blue"]);
-		self.selectedLedMode = ko.observable("White");
-
-		self.setMode = function() {
-			console.log("Set LED more");
-		};
-
-		self.on = function() {
-			console.log("Switch on LEDs");
-		};
-
-		self.off = function() {
-			console.log("Switch off LEDs");
-		};
-
-		return self;
-	}
-
 	function PiPowerGPIOViewModel(pin) {
 		var self = this;
 		// BCM/GPIO number
@@ -184,7 +161,6 @@ $(function() {
 		self.powerMeasurements = [self.voltage, self.current];
 
 		self.lightLevel = new PiPowerMeasuredValueViewModel("Light Level")
-		self.leds = new PiPowerLedViewModel("LEDs");
 
 		self.fan0 = new PiPowerFanViewModel("F0", 0);
 		self.fan1 = new PiPowerFanViewModel("F1", 1);
@@ -225,8 +201,6 @@ $(function() {
             });
             self.temperatureSensors(temperatureSensors);
 
-			self.leds.caption(self.settings.ledsCaption());
-
 			self.updateTemperaturePlot();
 			self.updatePowerPlot();
         };
@@ -244,7 +218,6 @@ $(function() {
             self.setPowerValues (data);
 
 			self.lightLevel.setValue(data.lightLevel);
-			self.leds.value(data.leds);
 
 			self.fan0.speed(data.fan0Speed);
 			self.fan1.speed(data.fan1Speed);
