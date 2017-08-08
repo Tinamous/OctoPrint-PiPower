@@ -16,9 +16,11 @@ $(function() {
         self.speedOptions = ko.observableArray([20, 40, 60, 80, 100]);
         self.selectedSpeedOption = ko.observable(100);
 
+        // Clicking On will also set the fan speed
+        // as per the dropdown.
         self.on = function () {
             console.log("Switch fan on");
-            self.setFanState(true);
+            self.update();
         };
 
         self.off = function () {
@@ -41,6 +43,10 @@ $(function() {
 				speed: self.selectedSpeedOption(),
             };
             OctoPrint.simpleApiCommand("pipower", "setFanSpeed", payload, {});
+
+            // And ensure the fan is on, if the users selected a speed and said set
+            // the fan should be switched on to run
+            self.setFanState(true);
         };
 
 		return self;
@@ -302,7 +308,7 @@ $(function() {
 		self.temperaturePlotOptions = {
             yaxis: {
                 min: 20,
-                max: 60,
+                max: 30,
                 ticks: 10
             },
             xaxis: {
@@ -364,21 +370,16 @@ $(function() {
         };
 
 		self.powerPlotOptions = {
-            yaxis: {
-                min: 0,
-                max: 100,
-                ticks: 10
-            },
 			yaxes: [{
 				// Voltage
                 min: 0,
                 max: 30,
-                ticks: 5
+                ticks: 10
             },{
 				// Current
                 min: 0,
                 max: 3000,
-                ticks: 100,
+                ticks: 50,
 				alignTicksWithAxis: 1,
 				position: "right",
             }],
@@ -444,12 +445,12 @@ $(function() {
 			yaxes: [{
 				// Fan 1
                 // -ve lower so the line shows at 0
-                min: -5,
+                min: -10,
                 max: 110,
                 ticks: 5
             },{
 				// Fan 2
-                min: -5,
+                min: -10,
                 max: 110,
                 ticks: 5,
             }],
