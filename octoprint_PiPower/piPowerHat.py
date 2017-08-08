@@ -123,13 +123,14 @@ class PiPowerHat:
 	def setup_lightsensor(self):
 
 		from tsl2561 import TSL2561
+		from tsl2561.constants import *  # pylint: disable=unused-wildcard-import
 		try:
 			self._has_light_sensor = False
 			self._logger.info("Initializing TSL2561 Light Sensor")
 			# See https://github.com/sim0nx/tsl2561/blob/master/tsl2561/tsl2561.py
 			# address=None, busnum=None, integration_time=TSL2561_INTEGRATIONTIME_402MS, gain=TSL2561_GAIN_1X, autogain=False, debug=False
 			# TODO: Allow config of gain and integration time and maybe address?
-			self._tsl2561 = TSL2561(address=TSL2561.TSL2561_ADDR_LOW)
+			self._tsl2561 = TSL2561(address=TSL2561_ADDR_LOW)
 			self._logger.info("TSL2561 Light Sensor configured")
 			self._has_light_sensor = True
 		except Exception as e:
