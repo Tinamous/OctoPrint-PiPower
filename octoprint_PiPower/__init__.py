@@ -29,7 +29,9 @@ class PipowerPlugin(octoprint.plugin.StartupPlugin,
                     octoprint.plugin.SimpleApiPlugin):
 
 	def __init__(self):
+		# TODO: Dispose of these when we exit.
 		self._readPiPowerValuesTimer = None
+		self._publishPiPowerValuesTimer = None
 
 		if sys.platform == "linux2":
 			self._powerHat = PiPowerHat();
@@ -41,7 +43,8 @@ class PipowerPlugin(octoprint.plugin.StartupPlugin,
 	def on_after_startup(self):
 		self._logger.info("Pi Power plugin startup. Starting timer.")
 		timerInterval = self._settings.get(["timerInterval"])
-		self.startTimer(timerInterval)
+		eventTimerInterval = self._settings.get(["eventTimerInterval"])
+		self.start_timer(timerInterval, eventTimerInterval)
 
 	def initialize(self):
 		self._logger.setLevel(logging.DEBUG)
@@ -68,13 +71,17 @@ class PipowerPlugin(octoprint.plugin.StartupPlugin,
 			],
 			fans = [
 				dict(fanId=0,
-					enabled=True,
-					caption="3 Pin Small Fan",
-					pwmFrequency=200),
+				     name="Fan 0",  # Caption in settings
+					 enabled=True,
+					 caption="3 Pin Small Fan",
+					 defaultSpeed=0, # 0 = stoppepd
+					 pwmFrequency=200),
 				dict(fanId=1,
+				     name="Fan 1", # Caption in settings
 				     enabled=True,
 				     caption="4 Pin Fan",
-				     pwmFrequency=200),
+				     defaultSpeed=0,  # 0 = stoppepd
+				     pwmFrequency=200)
 			],
 			fan0Caption="Cooling Fan",
 			fan1Caption="Pi Fan",
@@ -106,7 +113,27 @@ class PipowerPlugin(octoprint.plugin.StartupPlugin,
 					mode=1,
 				),
 			],
-			timerInterval = 2.0
+			timerInterval = 2.0,
+			eventTimerInterval=30.0,
+			automationOptions = [
+				# Fan speed will go to default speed, then be increased to the maximum fanSpeed
+				# from the matching automation options
+				# Device is Fan or GPIO or Printer (for pause)
+				# DeviceId is Fan Number or GPIO Pin
+				dict(enabled=True, name="Print Started", eventName="OctoPrint: Print Started Event", action="Set Fan Speed", device="Fan 1", setValue=0, timer=0),
+				dict(enabled=True, name="Print Done", eventName="PrintDone", action="Set Fan Speed", device="Fan 1", setValue=100, timer=60),
+				dict(enabled=True, name="Print Failed", eventName="PrintFailed", action="Set Fan Speed", device="Fan 1", setValue=100, timer=60),
+				# Custom event from Pi Power Plugin (ohh, that's us!)
+				dict(enabled=True, name="Above Temperature", eventName="AboveTemperature", action="Set Fan Speed", device="Fan 0", setValue=60, timer=3600, value=50),
+				dict(enabled=True, name="Above LightLevel", eventName="AboveLightLevel", action="Set Fan Speed", device="Fan 1", setValue=60, timer=60, value=50),
+			],
+			fanSpeedOptions=[0, 20, 40, 60, 80, 100],
+			# Fan: Set speed (0==off, 20-100=on)
+			# GPIO: Set value for pin
+			# Printer options: Pause (e.g. filament change)
+			# OctoPrint option: Fire an event (PrintStarted, PrintDone" etc.
+			actionOptions=["Set Fan Speed", "Set GPIO Pin", "Send Printer Command", "Raise OctoPrint Event"],
+			automationEventOptions = ["OctoPrint: Print Started Event", "PrintDone", "PrintFailed", "AboveTemperature", "AboveLightLevel", "BelowLightLevel"]
 			)
 
 	def get_template_configs(self):
@@ -188,10 +215,15 @@ class PipowerPlugin(octoprint.plugin.StartupPlugin,
 		sensorData = self.getPiPowerValues()
 		return flask.jsonify(sensorData)
 
-	def startTimer(self, interval):
+	def start_timer(self, interval, event_timer_interval):
 		self._readPiPowerValuesTimer = RepeatedTimer(interval, self.getPiPowerValues, None, None, True)
 		self._readPiPowerValuesTimer.start()
 		self._logger.info("Started timer. Interval: {0}s".format(interval))
+
+		self._publishPiPowerValuesTimer = RepeatedTimer(event_timer_interval, self.publish_pi_power_event, None, None, True)
+		self._publishPiPowerValuesTimer .start()
+		self._logger.info("Started event publisher timer. Interval: {0}s".format(event_timer_interval))
+
 
 	def getPiPowerValues(self):
 		#self._logger.debug("Getting values from PiPower...")
@@ -205,6 +237,15 @@ class PipowerPlugin(octoprint.plugin.StartupPlugin,
 			return pluginData
 		except Exception as e:
 			self._logger.warn("Errir getting the power value: {0}".format(e))
+
+
+	# A less frequent pi measurements publisher
+	# for other plugins (e.g. Tinamous) to use
+	def publish_pi_power_event(self):
+		pluginData = self._powerHat.getPiPowerValues(self._settings)
+
+		# Publish the measurements on the event bus for others.
+		self._event_bus.fire("PiPowerMeasured", pluginData)
 
 # If you want your plugin to be registered within OctoPrint under a different name than what you defined in setup.py
 # ("OctoPrint-PluginSkeleton"), you may define that here. Same goes for the other metadata derived from setup.py that

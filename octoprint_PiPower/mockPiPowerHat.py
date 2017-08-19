@@ -129,7 +129,7 @@ class MockPiPowerHat:
 			return 0
 
 	def get_fan_details(self, fan_id):
-		return dict(fanId=0, state=self._fanStates[fan_id], speed=self.get_fan_speed(fan_id), setSpeed=self._fanSpeeds[fan_id]);
+		return dict(fanId=fan_id, state=self._fanStates[fan_id], speed=self.get_fan_speed(fan_id), setSpeed=self._fanSpeeds[fan_id]);
 
 	# ===========================================
 	# Light Sensor

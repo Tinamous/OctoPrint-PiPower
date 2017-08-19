@@ -19,19 +19,14 @@
     <!-- /ko -->
 
     <h3>Fans</h3>
+    <!-- ko foreach: settings.plugins.pipower.fans -->
     <div class="control-group">
-        <label class="control-label">{{ _('Fan 1 Caption') }}</label>
+        <label class="control-label" data-bind="text: name"></label>
         <div class="controls">
-            <input type="text" class="input-block-level" data-bind="value: settings.plugins.pipower.fan0Caption">
+            <input type="text" class="input-block-level" data-bind="value: caption">
         </div>
     </div>
-
-    <div class="control-group">
-        <label class="control-label">{{ _('Fan 2 Caption') }}</label>
-        <div class="controls">
-            <input type="text" class="input-block-level" data-bind="value: settings.plugins.pipower.fan1Caption">
-        </div>
-    </div>
+    <!-- /ko -->
 
     <h3>Light Sensors</h3>
     <div class="control-group">
@@ -43,7 +38,7 @@
 
     <h3>GPIO</h3>
     <!-- ko foreach:settings.plugins.pipower.gpioOptions -->
-        <h4>GPIO Pin <span data-bind="text: pin"></span></h4>
+        <h4>Pin <span data-bind="text: pin"></span></h4>
         <div class="control-group">
             <div>
                 <label class="control-label">Caption</label>
@@ -65,5 +60,51 @@
             </div>
         </div>
     <!-- /ko -->
+
+    <h3>Automation</h3>
+     <!-- ko foreach: settings.plugins.pipower.automationOptions -->
+        <div class="control-group">
+            <div>
+                <label class="control-label">When: </label>
+                <div class="controls">
+                    <select data-bind="options: $root.settings.plugins.pipower.automationEventOptions, value: eventName" ></select>
+                </div>
+            </div>
+            <div>
+                <label class="control-label">Action: </label>
+                <div class="controls">
+                    <select data-bind="options: $root.settings.plugins.pipower.actionOptions, value: action" ></select>
+                </div>
+            </div>
+            <div data-bind="visible: action()=='Set Fan Speed'">
+                <label class="control-label">Fan: </label>
+                <div class="controls">
+                    <select data-bind="options: $root.settings.plugins.pipower.fans, optionsText: 'caption', value: device" ></select>
+                </div>
+            </div>
+            <div data-bind="visible: action()=='Set Fan Speed'">
+                <label class="control-label">Set Speed: </label>
+                <div class="controls">
+                    <select data-bind="options: $root.settings.plugins.pipower.fanSpeedOptions, value: setValue" ></select>
+                </div>
+            </div>
+            <div data-bind="visible: action()=='Set Fan Speed'">
+                <label class="control-label">For (seconds): </label>
+                <div class="controls">
+                    <select data-bind="value: timer" >
+                        <option value="0">Continious</option>
+                        <option value="60">1 Minute</option>
+                        <option value="120">2 Minutes</option>
+                        <option value="300">5 Minute</option>
+                        <option value="600">10 Minute</option>
+                        <option value="900">15 Minute</option>
+                        <option value="1800">30 Minute</option>
+                        <option value="3600">1 Hour</option>
+                    </select>
+                    <span class="help-block">Set to 0 for continious running.</span>
+                </div>
+            </div>
+        </div>
+        <!-- /ko -->
 
 </form>
