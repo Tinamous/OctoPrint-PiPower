@@ -69,8 +69,6 @@ class MockPiPowerHat:
 			fans = [
 				self.get_fan_details(0),
 				self.get_fan_details(1),
-				# Fan 3 is always on
-				dict(fanId=2, state=True, speed=100, setSpeed=100),
 			],
 			gpioValues = gpio_pin_values
 			)

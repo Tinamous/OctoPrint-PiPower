@@ -201,8 +201,6 @@ class PiPowerHat:
 				fans = [
 					self.get_fan_details(0),
 					self.get_fan_details(1),
-					# Fan 3 is always on
-					dict(fanId=2, state=True, speed=100, setSpeed=100),
 				],
 				gpioValues = gpio_pin_values
 				)
@@ -355,7 +353,8 @@ class PiPowerHat:
 			return 0
 
 	def get_fan_details(self, fan_id):
-		return dict(fanId=0, state=self._fanStates[fan_id], speed=self.get_fan_speed(fan_id), setSpeed=self._fanSpeeds[fan_id]);
+		# Fan Id is 1, 2
+		return dict(fanId=fan_id+1, state=self._fanStates[fan_id], speed=self.get_fan_speed(fan_id), setSpeed=self._fanSpeeds[fan_id]);
 	# ===========================================
 	# Light Sensor
 	# ===========================================
