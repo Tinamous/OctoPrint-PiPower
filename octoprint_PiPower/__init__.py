@@ -112,6 +112,12 @@ class PipowerPlugin(octoprint.plugin.StartupPlugin,
 					# Disabled = 0, Input = 1, Input pull down = 2, Input pull up = 3, Output = 4
 					mode=1,
 				),
+				dict(
+					pin=11,  # LED D7 on Pi Power Hat 1.2.1
+					caption="GPIO 11",
+					# Disabled = 0, Input = 1, Input pull down = 2, Input pull up = 3, Output = 4
+					mode=4,
+				),
 			],
 			timerInterval = 2.0,
 			eventTimerInterval=30.0,
