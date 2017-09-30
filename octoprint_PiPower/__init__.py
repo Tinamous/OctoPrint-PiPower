@@ -71,20 +71,18 @@ class PipowerPlugin(octoprint.plugin.StartupPlugin,
 			],
 			fans = [
 				dict(fanId=0,
-				     name="Fan 0",  # Caption in settings
+				     name="Fan 1",  # Caption in settings
 					 enabled=True,
-					 caption="3 Pin Small Fan",
+					 caption="Fan 1", # Caption used as table caption
 					 defaultSpeed=0, # 0 = stoppepd
 					 pwmFrequency=200),
 				dict(fanId=1,
-				     name="Fan 1", # Caption in settings
+				     name="Fan 2", # Caption in settings
 				     enabled=True,
-				     caption="4 Pin Fan",
+				     caption="Fan 2",
 				     defaultSpeed=0,  # 0 = stoppepd
 				     pwmFrequency=200)
 			],
-			fan0Caption="Cooling Fan",
-			fan1Caption="Pi Fan",
 			pwmFrequency=200,
 			lightSensorCaption = "Light Level",
 			gpioOptions = [

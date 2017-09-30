@@ -215,10 +215,10 @@ $(function() {
             self.settings = self.global_settings.settings.plugins.pipower;
 			console.log("PiPower Settings: " + self.settings );
 
-            // Fans
-            // TODO: use self.settings.fans...
-			self.fan0.caption(self.settings.fan0Caption());
-			self.fan1.caption(self.settings.fan1Caption());
+            for (var i=0; i<2; i++) {
+                var fanSettings = self.settings.fans();
+                self.fans()[i].caption(fanSettings[i].caption());
+            }
 
             // GPIO
 			var options = $.map(self.settings.gpioOptions(), function(option) {
